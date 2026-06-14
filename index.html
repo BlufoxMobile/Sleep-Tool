@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Night Sounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1c;
+    --card: rgba(255,255,255,0.045);
+    --card-on: rgba(125,150,255,0.13);
+    --line: rgba(255,255,255,0.09);
+    --line-on: rgba(140,160,255,0.45);
+    --ink: #e8ecf6;
+    --dim: rgba(232,236,246,0.5);
+    --accent: #8fa6ff;
+    --moon: #ffd9a0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { background: radial-gradient(ellipse at 50% -10%, #16203e 0%, var(--bg) 55%); min-height:100%; }
+  body {
+    font-family:'Poppins', sans-serif; color:var(--ink);
+    padding: max(24px, env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom));
+    max-width: 520px; margin: 0 auto;
+  }
+
+  header { text-align:center; margin-bottom: 22px; }
+  header h1 { font-family:'Lora', serif; font-weight:400; font-size:24px; letter-spacing:0.28em; text-transform:lowercase; }
+  header p { font-size:11px; font-weight:300; color:var(--dim); letter-spacing:0.1em; margin-top:6px; }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .sound {
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:14px 14px 12px; cursor:pointer; transition: background .25s ease, border-color .25s ease;
+  }
+  .sound.on { background:var(--card-on); border-color:var(--line-on); }
+  .sound .top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .sound .icon { font-size:22px; filter:saturate(0.85); }
+  .sound .name { font-size:13px; font-weight:400; letter-spacing:0.04em; }
+  .sound .state { margin-left:auto; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.15); transition: background .25s ease, box-shadow .25s ease; }
+  .sound.on .state { background:var(--accent); box-shadow:0 0 8px var(--accent); }
+
+  input[type="range"] { width:100%; height:28px; -webkit-appearance:none; background:transparent; display:block; }
+  input[type="range"]::-webkit-slider-runnable-track { height:3px; background:rgba(255,255,255,0.14); border-radius:2px; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+    background:#aebcff; margin-top:-8.5px; box-shadow:0 1px 8px rgba(143,166,255,0.45);
+  }
+  input[type="range"]::-moz-range-track { height:3px; background:rgba(255,255,255,0.14); border-radius:2px; }
+  input[type="range"]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#aebcff; border:none; }
+
+  .section { margin-top:24px; }
+  .section-label { font-size:10px; font-weight:500; letter-spacing:0.24em; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+
+  .master { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }
+
+  .chips { display:flex; gap:8px; }
+  .chip {
+    flex:1; padding:10px 4px; border-radius:12px; text-align:center; font-size:12px; font-weight:400;
+    background:var(--card); border:1px solid var(--line); color:var(--ink); cursor:pointer;
+    font-family:'Poppins', sans-serif; transition: background .2s, border-color .2s; white-space:nowrap;
+  }
+  #timer-chips .chip[data-min="0"] { flex:1.7; }
+  .chip.active { background:rgba(255,217,160,0.12); border-color:rgba(255,217,160,0.5); color:var(--moon); }
+
+  #lock-btn {
+    width:100%; margin-top:24px; padding:18px; border-radius:16px; border:1px solid var(--line-on);
+    background:linear-gradient(160deg, rgba(143,166,255,0.18), rgba(143,166,255,0.07));
+    color:var(--ink); font-family:'Poppins', sans-serif; font-size:14px; font-weight:500;
+    letter-spacing:0.06em; cursor:pointer;
+  }
+  #lock-btn:active { transform:scale(0.985); }
+  #lock-btn:disabled { opacity:0.4; }
+
+  #status {
+    margin-top:14px; text-align:center; font-size:12px; font-weight:300; color:var(--dim);
+    line-height:1.6; min-height:18px; transition:color .3s;
+  }
+  #status.good { color:#9fe6c3; }
+
+  .stop-row { display:none; gap:10px; margin-top:12px; }
+  .stop-row.visible { display:flex; }
+  .stop-row button {
+    flex:1; padding:13px; border-radius:14px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); font-family:'Poppins', sans-serif; font-size:13px; cursor:pointer;
+  }
+
+  footer { margin-top:30px; text-align:center; font-size:10.5px; font-weight:300; color:rgba(232,236,246,0.32); line-height:1.7; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>night sounds</h1>
+  <p>mix your evening · lock your screen · drift off</p>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="section">
+  <div class="section-label">Master volume</div>
+  <div class="master">
+    <input type="range" id="master" min="0" max="1" step="0.01" value="0.8">
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">Sleep timer</div>
+  <div class="chips" id="timer-chips">
+    <button class="chip active" data-min="0">∞ All night</button>
+    <button class="chip" data-min="15">15m</button>
+    <button class="chip" data-min="30">30m</button>
+    <button class="chip" data-min="60">1h</button>
+    <button class="chip" data-min="120">2h</button>
+  </div>
+</div>
+
+<button id="lock-btn" onclick="startLockMode()">🌙 &nbsp;Start screen-off playback</button>
+<div class="stop-row" id="stop-row">
+  <button onclick="updateLockMix()">↻ Update mix</button>
+  <button onclick="stopLockMode()">■ Stop</button>
+</div>
+<div id="status">Tap sounds to preview, set your mix, then start screen-off playback.</div>
+
+<footer>
+  Sounds are generated on your phone — nothing streams, nothing tracked.<br>
+  If you hear nothing with the screen off, check your volume and silent switch.
+</footer>
+
+<audio id="player" loop playsinline></audio>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  NIGHT SOUNDS — generative ambient mixer
+//  Live preview uses Web Audio. Screen-off mode renders your mix
+//  into a seamless audio loop played through a media element, so
+//  playback survives screen lock (and shows on the lock screen).
+// ════════════════════════════════════════════════════════════════
+
+const SR = 44100;
+const LOOP_SEC = 32;        // loop length
+const XF_SEC = 2;           // crossfade for seamlessness
+
+const SOUNDS = [
+  { id:'rain',    name:'Rain',        icon:'🌧️', vol:0.7 },
+  { id:'ocean',   name:'Ocean',       icon:'🌊', vol:0.7 },
+  { id:'storm',   name:'Thunder',     icon:'⛈️', vol:0.6 },
+  { id:'wind',    name:'Wind',        icon:'🌬️', vol:0.6 },
+  { id:'fire',    name:'Campfire',    icon:'🔥', vol:0.7 },
+  { id:'creek',   name:'Creek',       icon:'🏞️', vol:0.6 },
+  { id:'cricket', name:'Crickets',    icon:'🦗', vol:0.5 }
+];
+
+const state = {};           // id -> { on, vol, buf, gainNode }
+let ctx = null, masterGain = null;
+let buffersReady = false, building = false;
+let lockActive = false, lockDirty = false;
+let timerMin = 0, loopsRemaining = 0;
+const player = document.getElementById('player');
+
+// ── mobile audio unlock ──────────────────────────────────────────
+// A near-silent looping track started inside a tap gesture switches
+// the phone's audio session into "media playback" mode. This defeats
+// the iPhone silent switch and keeps the player element unlocked so
+// we can start the real mix programmatically afterwards.
+function makeSilentURL() {
+  const n = Math.floor(SR * 0.3), b = new DataView(new ArrayBuffer(44 + n * 2));
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) b.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0,'RIFF'); b.setUint32(4, 36 + n*2, true); ws(8,'WAVE'); ws(12,'fmt ');
+  b.setUint32(16,16,true); b.setUint16(20,1,true); b.setUint16(22,1,true);
+  b.setUint32(24,SR,true); b.setUint32(28,SR*2,true); b.setUint16(32,2,true); b.setUint16(34,16,true);
+  ws(36,'data'); b.setUint32(40, n*2, true);
+  return URL.createObjectURL(new Blob([b.buffer], { type:'audio/wav' }));
+}
+const silentURL = makeSilentURL();
+const unlocker = document.createElement('audio');
+unlocker.src = silentURL; unlocker.loop = true; unlocker.volume = 0.01;
+unlocker.setAttribute('playsinline', '');
+document.body.appendChild(unlocker);
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  const p = unlocker.play();
+  if (p) p.catch(() => { audioUnlocked = false; });
+}
+
+// ── sound generation ─────────────────────────────────────────────
+function makeLoop(writer) {
+  const n = (LOOP_SEC + XF_SEC) * SR;
+  const a = new Float32Array(n);
+  writer(a, SR);
+  // crossfade tail into head for a seamless loop
+  const xf = XF_SEC * SR, body = LOOP_SEC * SR;
+  const out = new Float32Array(body);
+  for (let i = 0; i < body; i++) out[i] = a[i];
+  for (let i = 0; i < xf; i++) {
+    const w = i / xf;
+    out[i] = a[i] * w + a[body + i] * (1 - w);
+  }
+  return out;
+}
+
+function genRain(a, sr) {
+  let lp = 0;
+  for (let i = 0; i < a.length; i++) {
+    const w = Math.random() * 2 - 1;
+    lp += 0.06 * (w - lp);
+    a[i] = (w - lp) * 0.16;             // airy broadband hiss
+  }
+  // droplets
+  let t = 0;
+  while (t < a.length / sr) {
+    t += 0.025 + Math.random() * 0.09;
+    const f = 900 + Math.random() * 2600;
+    const len = (0.006 + Math.random() * 0.02) * sr;
+    const amp = 0.04 + Math.random() * 0.09;
+    const s0 = Math.floor(t * sr);
+    for (let j = 0; j < len && s0 + j < a.length; j++) {
+      a[s0 + j] += Math.sin(2 * Math.PI * f * j / sr) * Math.exp(-j / (len * 0.35)) * amp;
+    }
+  }
+}
+
+function genOcean(a, sr) {
+  let b = 0, lp = 0;
+  for (let i = 0; i < a.length; i++) {
+    const t = i / sr;
+    const w = Math.random() * 2 - 1;
+    b = (b + 0.02 * w) / 1.02;
+    const swell = Math.pow(0.5 + 0.5 * Math.sin(2 * Math.PI * t / 11 + Math.sin(2 * Math.PI * t / 27)), 2.4);
+    const e = 0.22 + 0.78 * swell;
+    const cut = 0.018 + 0.11 * e;
+    lp += cut * (b * 3.2 - lp);
+    a[i] = lp * e * 1.1 + (w - lp) * 0.05 * Math.pow(e, 3); // hiss on the crash
+  }
+}
+
+function genStorm(a, sr) {
+  genRain(a, sr);
+  for (let i = 0; i < a.length; i++) a[i] *= 1.15;
+  // thunder rumbles
+  const events = 3;
+  for (let e = 0; e < events; e++) {
+    const start = Math.floor((1 + Math.random() * (LOOP_SEC - 8)) * sr);
+    const dur = (3 + Math.random() * 3) * sr;
+    let b = 0, lp = 0;
+    const sub = 38 + Math.random() * 30;
+    for (let j = 0; j < dur && start + j < a.length; j++) {
+      const tt = j / sr;
+      const env = Math.exp(-tt / 1.4) * (1 - Math.exp(-tt / 0.12));
+      const w = Math.random() * 2 - 1;
+      b = (b + 0.02 * w) / 1.02;
+      lp += 0.012 * (b * 3.5 - lp);
+      a[start + j] += (lp * 1.6 + Math.sin(2 * Math.PI * sub * tt) * 0.25) * env * 0.9;
+    }
+  }
+}
+
+function genWind(a, sr) {
+  let lp = 0, lp2 = 0;
+  for (let i = 0; i < a.length; i++) {
+    const t = i / sr;
+    const w = Math.random() * 2 - 1;
+    const m = 0.5 + 0.3 * Math.sin(2 * Math.PI * t / 8.3) + 0.2 * Math.sin(2 * Math.PI * t / 3.1 + 1.7);
+    const cut = 0.012 + 0.05 * m;
+    lp += cut * (w - lp);
+    lp2 += 0.006 * (lp - lp2);
+    a[i] = (lp - lp2) * 1.9 * (0.55 + 0.45 * m);
+  }
+}
+
+function genFire(a, sr) {
+  let b = 0, lp = 0;
+  for (let i = 0; i < a.length; i++) {
+    const w = Math.random() * 2 - 1;
+    b = (b + 0.02 * w) / 1.02;
+    lp += 0.04 * (b * 3 - lp);
+    a[i] = lp * 0.28;                   // low ember rumble
+  }
+  // crackles
+  let t = 0;
+  while (t < a.length / sr) {
+    t += 0.03 + Math.random() * 0.22;
+    const big = Math.random() < 0.12;
+    const len = (big ? 0.012 : 0.003 + Math.random() * 0.008) * sr;
+    const amp = (big ? 0.5 : 0.12 + Math.random() * 0.2) * (Math.random() < 0.5 ? 1 : -1);
+    const s0 = Math.floor(t * sr);
+    let f = 0;
+    for (let j = 0; j < len && s0 + j < a.length; j++) {
+      const w = Math.random() * 2 - 1;
+      f += 0.55 * (w - f);
+      a[s0 + j] += f * Math.exp(-j / (len * 0.3)) * amp * 2.2;
+    }
+  }
+}
+
+function genCreek(a, sr) {
+  const v = [
+    { lp:0, lp2:0, rate:0.9, ph:0.0, base:0.10, depth:0.28 },
+    { lp:0, lp2:0, rate:1.7, ph:2.1, base:0.16, depth:0.30 },
+    { lp:0, lp2:0, rate:2.6, ph:4.0, base:0.24, depth:0.25 }
+  ];
+  for (let i = 0; i < a.length; i++) {
+    const t = i / sr;
+    let s = 0;
+    for (const u of v) {
+      const w = Math.random() * 2 - 1;
+      const m = 0.5 + 0.5 * Math.sin(2 * Math.PI * u.rate * t + u.ph + Math.sin(2 * Math.PI * 0.13 * t));
+      const cut = u.base * (0.4 + u.depth * m);
+      u.lp += cut * (w - u.lp);
+      u.lp2 += cut * 0.4 * (u.lp - u.lp2);
+      s += (u.lp - u.lp2);
+    }
+    a[i] = s * 0.55 + (Math.random() * 2 - 1) * 0.015;
+  }
+}
+
+function genCricket(a, sr) {
+  // faint night-air floor
+  let b = 0;
+  for (let i = 0; i < a.length; i++) {
+    const w = Math.random() * 2 - 1;
+    b = (b + 0.02 * w) / 1.02;
+    a[i] = b * 0.06;
+  }
+  const voices = [
+    { f: 4050, amp: 0.075 },
+    { f: 4400, amp: 0.06 },
+    { f: 3750, amp: 0.05 }
+  ];
+  for (const vo of voices) {
+    let t = 0.3 + Math.random() * 0.8;
+    while (t < a.length / sr) {
+      // a trill = 3 quick chirps
+      for (let c = 0; c < 3; c++) {
+        const s0 = Math.floor((t + c * 0.11) * sr);
+        const len = 0.055 * sr;
+        for (let j = 0; j < len && s0 + j < a.length; j++) {
+          const tt = j / sr;
+          const am = 0.5 + 0.5 * Math.sin(2 * Math.PI * 38 * tt - Math.PI / 2);
+          const env = Math.sin(Math.PI * j / len);
+          a[s0 + j] += Math.sin(2 * Math.PI * vo.f * tt) * am * env * vo.amp;
+        }
+      }
+      t += 0.85 + Math.random() * 0.9;
+    }
+  }
+}
+
+const GENERATORS = { rain:genRain, ocean:genOcean, storm:genStorm, wind:genWind, fire:genFire, creek:genCreek, cricket:genCricket };
+
+// ── audio engine ─────────────────────────────────────────────────
+async function ensureEngine() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = parseFloat(document.getElementById('master').value);
+    masterGain.connect(ctx.destination);
+  }
+  if (ctx.state === 'suspended') await ctx.resume();
+  if (buffersReady || building) return;
+  building = true;
+  setStatus('Brewing your sounds…');
+  await new Promise(r => setTimeout(r, 30)); // let UI paint
+  for (const s of SOUNDS) {
+    const data = makeLoop(GENERATORS[s.id]);
+    const buf = ctx.createBuffer(1, data.length, SR);
+    buf.copyToChannel(data, 0);
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    gain.connect(masterGain);
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    src.connect(gain); src.start();
+    state[s.id].data = data;
+    state[s.id].gainNode = gain;
+    await new Promise(r => setTimeout(r, 10));
+  }
+  buffersReady = true; building = false;
+  setStatus('Tap sounds to preview, set your mix, then start screen-off playback.');
+  applyAllGains();
+}
+
+function applyAllGains() {
+  if (!buffersReady) return;
+  for (const s of SOUNDS) {
+    const st = state[s.id];
+    if (st.gainNode) st.gainNode.gain.setTargetAtTime(st.on && !lockActive ? st.vol : 0, ctx.currentTime, 0.15);
+  }
+}
+
+// ── lock-screen mode ─────────────────────────────────────────────
+function renderMixWav() {
+  const n = LOOP_SEC * SR;
+  const mix = new Float32Array(n);
+  const master = parseFloat(document.getElementById('master').value);
+  let any = false;
+  for (const s of SOUNDS) {
+    const st = state[s.id];
+    if (!st.on || !st.data) continue;
+    any = true;
+    const g = st.vol * master;
+    for (let i = 0; i < n; i++) mix[i] += st.data[i] * g;
+  }
+  if (!any) return null;
+  // gentle soft-clip so stacked sounds never crackle
+  for (let i = 0; i < n; i++) { const x = mix[i]; mix[i] = x / (1 + Math.abs(x) * 0.6); }
+  // encode 16-bit PCM WAV
+  const bytes = new DataView(new ArrayBuffer(44 + n * 2));
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) bytes.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); bytes.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); bytes.setUint32(16, 16, true); bytes.setUint16(20, 1, true);
+  bytes.setUint16(22, 1, true); bytes.setUint32(24, SR, true);
+  bytes.setUint32(28, SR * 2, true); bytes.setUint16(32, 2, true); bytes.setUint16(34, 16, true);
+  ws(36, 'data'); bytes.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) {
+    const v = Math.max(-1, Math.min(1, mix[i]));
+    bytes.setInt16(44 + i * 2, v * 32767, true);
+  }
+  return new Blob([bytes], { type: 'audio/wav' });
+}
+
+function startLockMode() {
+  // This first block runs synchronously inside the tap gesture —
+  // mobile browsers only allow audio to start here.
+  unlockAudio();
+  if (!player.src) player.src = silentURL;
+  const pre = player.play();
+  if (pre) pre.catch(() => {});
+  continueStartLock();
+}
+
+async function continueStartLock() {
+  await ensureEngine();
+  if (!buffersReady) { setStatus('Still brewing your sounds — one moment…'); setTimeout(continueStartLock, 500); return; }
+  const blob = renderMixWav();
+  if (!blob) { player.pause(); setStatus('Turn on at least one sound first, then try again.'); return; }
+  const old = player.src;
+  player.src = URL.createObjectURL(blob);
+  if (old && old !== silentURL) URL.revokeObjectURL(old);
+
+  if (timerMin > 0) {
+    player.loop = false;
+    loopsRemaining = Math.ceil((timerMin * 60) / LOOP_SEC);
+  } else {
+    player.loop = true;
+  }
+  player.volume = 1;
+  try { await player.play(); }
+  catch (e) {
+    setStatus('Playback was blocked (' + (e && e.message ? e.message : 'no permission') + '). Tap the button once more.');
+    return;
+  }
+
+  lockActive = true; lockDirty = false;
+  applyAllGains(); // silence live preview so it doesn't double up
+  unlocker.pause(); // hand the audio session to the real mix
+  setMediaSession();
+  document.getElementById('lock-btn').style.display = 'none';
+  document.getElementById('stop-row').classList.add('visible');
+  setStatus(timerMin > 0
+    ? `🌙 Playing — lock your screen. Fades out after ${timerMin} minutes.`
+    : '🌙 Playing all night — lock your screen and rest. It won\'t stop on its own.', true);
+}
+
+player.addEventListener('ended', () => {
+  if (!lockActive || timerMin === 0) return;
+  loopsRemaining--;
+  if (loopsRemaining > 0) {
+    // fade the last loop down
+    player.volume = loopsRemaining === 1 ? 0.5 : 1;
+    player.currentTime = 0;
+    player.play();
+  } else {
+    stopLockMode();
+    setStatus('Sleep timer finished. Goodnight. 🌙', true);
+  }
+});
+
+function updateLockMix() {
+  if (!lockActive) return;
+  stopLockMode(true);
+  startLockMode();
+}
+
+function stopLockMode(silent) {
+  player.pause();
+  player.removeAttribute('src');
+  player.load();
+  player.volume = 1;
+  lockActive = false;
+  if (audioUnlocked) { const p = unlocker.play(); if (p) p.catch(() => {}); }
+  document.getElementById('lock-btn').style.display = 'block';
+  document.getElementById('stop-row').classList.remove('visible');
+  applyAllGains();
+  if (!silent) setStatus('Stopped. Your mix is still set — start again anytime.');
+}
+
+function setMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const active = SOUNDS.filter(s => state[s.id].on).map(s => s.name).join(' + ');
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: active || 'Night Sounds',
+    artist: 'Night Sounds',
+    album: 'Ambient Mixer'
+  });
+  navigator.mediaSession.setActionHandler('play', () => player.play());
+  navigator.mediaSession.setActionHandler('pause', () => player.pause());
+}
+
+// ── UI ───────────────────────────────────────────────────────────
+function setStatus(msg, good) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = good ? 'good' : '';
+}
+
+function markDirty() {
+  if (lockActive && !lockDirty) {
+    lockDirty = true;
+    setStatus('Mix changed — tap "Update mix" to apply it to screen-off playback.');
+  }
+}
+
+function buildUI() {
+  const grid = document.getElementById('grid');
+  for (const s of SOUNDS) {
+    state[s.id] = { on:false, vol:s.vol, data:null, gainNode:null };
+    const card = document.createElement('div');
+    card.className = 'sound'; card.id = 'card-' + s.id;
+    card.innerHTML = `
+      <div class="top">
+        <span class="icon">${s.icon}</span>
+        <span class="name">${s.name}</span>
+        <span class="state"></span>
+      </div>
+      <input type="range" min="0" max="1" step="0.01" value="${s.vol}">`;
+    const slider = card.querySelector('input');
+    card.addEventListener('click', async (e) => {
+      if (e.target === slider) return;
+      unlockAudio();
+      state[s.id].on = !state[s.id].on;
+      card.classList.toggle('on', state[s.id].on);
+      await ensureEngine();
+      applyAllGains();
+      markDirty();
+    });
+    slider.addEventListener('input', () => {
+      state[s.id].vol = parseFloat(slider.value);
+      applyAllGains();
+      markDirty();
+    });
+    slider.addEventListener('click', e => e.stopPropagation());
+    grid.appendChild(card);
+  }
+  document.getElementById('master').addEventListener('input', e => {
+    if (masterGain) masterGain.gain.setTargetAtTime(parseFloat(e.target.value), ctx.currentTime, 0.1);
+    markDirty();
+  });
+  document.querySelectorAll('#timer-chips .chip').forEach(ch => {
+    ch.addEventListener('click', () => {
+      document.querySelectorAll('#timer-chips .chip').forEach(c => c.classList.remove('active'));
+      ch.classList.add('active');
+      timerMin = parseInt(ch.dataset.min);
+      markDirty();
+    });
+  });
+}
+buildUI();
+</script>
+</body>
+</html>
