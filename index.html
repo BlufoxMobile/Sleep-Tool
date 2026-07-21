@@ -69,6 +69,10 @@
   #timer-chips .chip[data-min="0"] { flex:1.7; }
   .chip.active { background:rgba(255,217,160,0.12); border-color:rgba(255,217,160,0.5); color:var(--moon); }
 
+  #scene-section { margin-top:0; margin-bottom:24px; }
+  #scene-chips { flex-wrap:wrap; }
+  #scene-chips .chip { flex:1 1 auto; min-width:92px; }
+
   #lock-btn {
     width:100%; margin-top:24px; padding:18px; border-radius:16px; border:1px solid var(--line-on);
     background:linear-gradient(160deg, rgba(143,166,255,0.18), rgba(143,166,255,0.07));
@@ -101,6 +105,17 @@
   <p>mix your evening · lock your screen · drift off</p>
 </header>
 
+<div class="section" id="scene-section">
+  <div class="section-label">Scenes</div>
+  <div class="chips" id="scene-chips">
+    <button class="chip" data-scene="storm">Stormy Night</button>
+    <button class="chip" data-scene="camp">Cozy Camp</button>
+    <button class="chip" data-scene="tent">Tent in Rain</button>
+    <button class="chip" data-scene="train">Night Train</button>
+    <button class="chip" data-scene="fan">Deep Fan</button>
+  </div>
+</div>
+
 <div class="grid" id="grid"></div>
 
 <div class="section">
@@ -126,7 +141,7 @@
   <button onclick="updateLockMix()">↻ Update mix</button>
   <button onclick="stopLockMode()">■ Stop</button>
 </div>
-<div id="status">Tap sounds to preview, set your mix, then start screen-off playback.</div>
+<div id="status">Tap a scene or mix your own sounds, then start screen-off playback.</div>
 
 <footer>
   Real field recordings, bundled with the app — nothing is tracked.<br>
@@ -151,14 +166,27 @@ const XF_SEC = 2.5;         // crossfade for seamlessness
 const TRIM_SEC = 0.06;      // skip any codec priming at the clip start
 
 const SOUNDS = [
-  { id:'rain',    name:'Rain',     icon:'🌧️', vol:0.75 },
-  { id:'ocean',   name:'Ocean',    icon:'🌊', vol:0.65 },
-  { id:'thunder', name:'Thunder',  icon:'⛈️', vol:0.7  },
-  { id:'wind',    name:'Wind',     icon:'🌬️', vol:0.6  },
-  { id:'fire',    name:'Campfire', icon:'🔥', vol:0.7  },
-  { id:'creek',   name:'Creek',    icon:'🏞️', vol:0.6  },
-  { id:'cricket', name:'Crickets', icon:'🦗', vol:0.55 }
+  { id:'rain',      name:'Rain',         icon:'🌧️', vol:0.75 },
+  { id:'tentrain',  name:'Rain on Tent', icon:'⛺', vol:0.75 },
+  { id:'thunder',   name:'Thunder',      icon:'⛈️', vol:0.7  },
+  { id:'wind',      name:'Wind',         icon:'🌬️', vol:0.6  },
+  { id:'ocean',     name:'Ocean',        icon:'🌊', vol:0.65 },
+  { id:'creek',     name:'Creek',        icon:'🏞️', vol:0.6  },
+  { id:'waterfall', name:'Waterfall',    icon:'💧', vol:0.6  },
+  { id:'fire',      name:'Campfire',     icon:'🔥', vol:0.7  },
+  { id:'cricket',   name:'Crickets',     icon:'🦗', vol:0.55 },
+  { id:'frogs',     name:'Frogs',        icon:'🐸', vol:0.55 },
+  { id:'train',     name:'Night Train',  icon:'🚂', vol:0.65 },
+  { id:'fan',       name:'Fan',          icon:'🌀', vol:0.7  }
 ];
+
+const SCENES = {
+  storm: { rain:0.75, thunder:0.7, wind:0.35 },
+  camp:  { fire:0.75, cricket:0.5, creek:0.4 },
+  tent:  { tentrain:0.8, wind:0.3 },
+  train: { train:0.7, rain:0.4 },
+  fan:   { fan:0.85 }
+};
 
 const state = {};           // id -> { on, vol, loop(AudioBuffer), gainNode, src }
 let ctx = null, masterGain = null, SR = 44100;
@@ -236,7 +264,8 @@ async function ensureEngine() {
   if (ctx.state === 'suspended') await ctx.resume();
   if (buffersReady || building) return;
   building = true;
-  setStatus('Loading sounds…');
+  let loaded = 0;
+  setStatus('Loading sounds… 0/' + SOUNDS.length);
   for (const s of SOUNDS) document.getElementById('card-' + s.id).classList.add('loading');
 
   await Promise.all(SOUNDS.map(async (s) => {
@@ -260,6 +289,8 @@ async function ensureEngine() {
     } catch (e) {
       state[s.id].error = true;
     } finally {
+      loaded++;
+      setStatus('Loading sounds… ' + loaded + '/' + SOUNDS.length);
       document.getElementById('card-' + s.id).classList.remove('loading');
     }
   }));
@@ -268,7 +299,7 @@ async function ensureEngine() {
   const failed = SOUNDS.filter(s => state[s.id].error).map(s => s.name);
   setStatus(failed.length
     ? 'Couldn’t load: ' + failed.join(', ') + '. Make sure the app is served over http (not opened as a file).'
-    : 'Tap sounds to preview, set your mix, then start screen-off playback.');
+    : 'Tap a scene or mix your own sounds, then start screen-off playback.');
   applyAllGains();
 }
 
@@ -408,6 +439,48 @@ function setMediaSession() {
   navigator.mediaSession.setActionHandler('pause', () => player.pause());
 }
 
+// ── mix persistence ──────────────────────────────────────────────
+// The whole mix (per-sound on/vol, master volume, timer) is saved to
+// localStorage on every change and restored on load, before any audio
+// engine exists. try/catch keeps private browsing from breaking us.
+const MIX_KEY = 'nightsounds-mix-v1';
+function saveMix() {
+  try {
+    const mix = { sounds:{}, master:parseFloat(masterEl.value), timer:timerMin };
+    for (const s of SOUNDS) mix.sounds[s.id] = { on:state[s.id].on, vol:state[s.id].vol };
+    localStorage.setItem(MIX_KEY, JSON.stringify(mix));
+  } catch (e) { /* storage unavailable — the mix just won't persist */ }
+}
+function loadMix() {
+  try { return JSON.parse(localStorage.getItem(MIX_KEY)) || null; }
+  catch (e) { return null; }
+}
+
+// ── scenes (preset mixes) ────────────────────────────────────────
+function clearSceneChip() {
+  document.querySelectorAll('#scene-chips .chip').forEach(c => c.classList.remove('active'));
+}
+
+async function applyScene(chip) {
+  const wasActive = chip.classList.contains('active');
+  clearSceneChip();
+  const mix = wasActive ? {} : SCENES[chip.dataset.scene]; // re-tap = all off
+  unlockAudio();
+  for (const s of SOUNDS) {
+    const st = state[s.id];
+    st.on = mix[s.id] !== undefined;
+    if (st.on) st.vol = mix[s.id];
+    const card = document.getElementById('card-' + s.id);
+    card.classList.toggle('on', st.on);
+    card.querySelector('input').value = st.vol;
+  }
+  if (!wasActive) chip.classList.add('active');
+  saveMix();
+  await ensureEngine();
+  applyAllGains();
+  markDirty();
+}
+
 // ── UI ───────────────────────────────────────────────────────────
 function setStatus(msg, good) {
   const el = document.getElementById('status');
@@ -424,37 +497,47 @@ function markDirty() {
 
 function buildUI() {
   const grid = document.getElementById('grid');
+  const saved = loadMix();
   for (const s of SOUNDS) {
-    state[s.id] = { on:false, vol:s.vol, loop:null, gainNode:null, src:null };
+    const sv = saved && saved.sounds && saved.sounds[s.id];
+    const on = !!(sv && sv.on);
+    const vol = sv && typeof sv.vol === 'number' ? sv.vol : s.vol;
+    state[s.id] = { on, vol, loop:null, gainNode:null, src:null };
     const card = document.createElement('div');
-    card.className = 'sound'; card.id = 'card-' + s.id;
+    card.className = on ? 'sound on' : 'sound'; card.id = 'card-' + s.id;
     card.innerHTML = `
       <div class="top">
         <span class="icon">${s.icon}</span>
         <span class="name">${s.name}</span>
         <span class="state"></span>
       </div>
-      <input type="range" min="0" max="1" step="0.01" value="${s.vol}">`;
+      <input type="range" min="0" max="1" step="0.01" value="${vol}">`;
     const slider = card.querySelector('input');
     card.addEventListener('click', async (e) => {
       if (e.target === slider) return;
       unlockAudio();
       state[s.id].on = !state[s.id].on;
       card.classList.toggle('on', state[s.id].on);
+      clearSceneChip();
+      saveMix();
       await ensureEngine();
       applyAllGains();
       markDirty();
     });
     slider.addEventListener('input', () => {
       state[s.id].vol = parseFloat(slider.value);
+      clearSceneChip();
+      saveMix();
       applyAllGains();
       markDirty();
     });
     slider.addEventListener('click', e => e.stopPropagation());
     grid.appendChild(card);
   }
+  if (saved && typeof saved.master === 'number') masterEl.value = saved.master;
   masterEl.addEventListener('input', e => {
     if (masterGain) masterGain.gain.setTargetAtTime(parseFloat(e.target.value), ctx.currentTime, 0.1);
+    saveMix();
     markDirty();
   });
   document.querySelectorAll('#timer-chips .chip').forEach(ch => {
@@ -462,8 +545,20 @@ function buildUI() {
       document.querySelectorAll('#timer-chips .chip').forEach(c => c.classList.remove('active'));
       ch.classList.add('active');
       timerMin = parseInt(ch.dataset.min);
+      saveMix();
       markDirty();
     });
+  });
+  if (saved && typeof saved.timer === 'number') {
+    const tc = document.querySelector('#timer-chips .chip[data-min="' + saved.timer + '"]');
+    if (tc) {
+      document.querySelectorAll('#timer-chips .chip').forEach(c => c.classList.remove('active'));
+      tc.classList.add('active');
+      timerMin = saved.timer;
+    }
+  }
+  document.querySelectorAll('#scene-chips .chip').forEach(ch => {
+    ch.addEventListener('click', () => applyScene(ch));
   });
 }
 buildUI();
