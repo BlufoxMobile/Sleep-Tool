@@ -95,7 +95,31 @@
     color:var(--ink); font-family:'Poppins', sans-serif; font-size:13px; cursor:pointer;
   }
 
-  footer { margin-top:30px; text-align:center; font-size:10.5px; font-weight:300; color:rgba(232,236,246,0.32); line-height:1.7; }
+  #breathe-chips { flex-wrap:wrap; }
+#breathe-chips .chip { flex:1 1 auto; min-width:104px; }
+
+#breathe-overlay {
+position:fixed; inset:0; z-index:100; display:none;
+background:#050813; opacity:0; transition:opacity .5s ease;
+}
+#breathe-overlay.open { display:block; opacity:1; }
+#breathe-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+#breathe-ui {
+position:absolute; inset:0; display:flex; flex-direction:column;
+align-items:center; justify-content:center; pointer-events:none; text-align:center;
+}
+#breathe-phase { font-family:'Lora', serif; font-size:26px; font-weight:400; letter-spacing:0.16em; color:#eef2f6; }
+#breathe-count { font-size:52px; font-weight:300; color:rgba(238,242,246,0.55); margin-top:4px; font-variant-numeric:tabular-nums; }
+#breathe-sub { font-size:11px; font-weight:300; letter-spacing:0.18em; color:rgba(238,242,246,0.38); margin-top:10px; text-transform:lowercase; }
+#breathe-close {
+position:absolute; left:50%; transform:translateX(-50%);
+bottom:calc(34px + env(safe-area-inset-bottom));
+padding:13px 34px; border-radius:14px; border:1px solid rgba(255,255,255,0.14);
+background:rgba(255,255,255,0.05); color:#eef2f6; font-family:'Poppins', sans-serif;
+font-size:13px; letter-spacing:0.08em; cursor:pointer;
+}
+
+footer { margin-top:30px; text-align:center; font-size:10.5px; font-weight:300; color:rgba(232,236,246,0.32); line-height:1.7; }
 </style>
 </head>
 <body>
@@ -117,6 +141,15 @@
 </div>
 
 <div class="grid" id="grid"></div>
+
+<div class="section">
+<div class="section-label">Breathing exercises</div>
+<div class="chips" id="breathe-chips">
+<button class="chip" data-pattern="478">4&ndash;7&ndash;8</button>
+<button class="chip" data-pattern="box">Box 4&times;4</button>
+<button class="chip" data-pattern="calm">Calm 4&ndash;6</button>
+</div>
+</div>
 
 <div class="section">
   <div class="section-label">Master volume</div>
@@ -148,6 +181,16 @@
   If you hear nothing with the screen off, check your volume and silent switch.
 </footer>
 
+<div id="breathe-overlay">
+<canvas id="breathe-canvas"></canvas>
+<div id="breathe-ui">
+<div id="breathe-phase">Breathe in</div>
+<div id="breathe-count">4</div>
+<div id="breathe-sub">follow the light</div>
+</div>
+<button id="breathe-close">Done</button>
+</div>
+
 <audio id="player" loop playsinline></audio>
 
 <script>
@@ -171,7 +214,16 @@ const RENDER_SEC = 120; // screen-off loop length (was 40)
 // this is what stops crickets and frogs sounding like a tape loop.
 const VOICE_RATES = [1.0, 0.979];
 const VOICE_OFFSETS = [0, 0.47];
-const VOICE_GAIN = 1 / Math.sqrt(VOICE_RATES.length);      // skip any codec priming at the clip start
+const VOICE_GAIN = 1 / Math.sqrt(VOICE_RATES.length);
+
+// Sounds marked sparse (frogs, crickets) are discrete calls, not textures.
+// Looping them continuously smears each call into itself, so instead the
+// 40s cycle is cut into SPARSE_MAX fixed slots and each slot fires at most
+// once, at a random moment inside it — a hard ceiling of 8 starts per 40s.
+const SPARSE_SLOT_SEC = 5;
+const SPARSE_MAX = 8;
+const SPARSE_CHANCE = 0.8; // each slot fires this often, so usually fewer
+const SHOT_MAX_SEC = 5; // longest single call kept from the recording      // skip any codec priming at the clip start
 
 const SOUNDS = [
   { id:'rain',      name:'Rain',         icon:'🌧️', vol:0.75 },
@@ -182,8 +234,8 @@ const SOUNDS = [
   { id:'creek',     name:'Creek',        icon:'🏞️', vol:0.6  },
   { id:'waterfall', name:'Waterfall',    icon:'💧', vol:0.6  },
   { id:'fire',      name:'Campfire',     icon:'🔥', vol:0.7  },
-  { id:'cricket',   name:'Crickets',     icon:'🦗', vol:0.55 },
-  { id:'frogs',     name:'Frogs',        icon:'🐸', vol:0.55 },
+  { id:'cricket',   sparse:true, name:'Crickets',     icon:'🦗', vol:0.55 },
+  { id:'frogs',     sparse:true, name:'Frogs',        icon:'🐸', vol:0.55 },
   { id:'train',     name:'Night Train',  icon:'🚂', vol:0.65 },
   { id:'fan',       name:'Fan',          icon:'🌀', vol:0.7  }
 ];
@@ -261,6 +313,68 @@ function buildLoop(decoded) {
 }
 
 // ── audio engine ─────────────────────────────────────────────────
+// Keeps a short, click-free excerpt of a recording to fire as a one-shot.
+function trimShot(decoded) {
+const sr = decoded.sampleRate;
+const trim = Math.round(TRIM_SEC * sr);
+const len = Math.min(decoded.length - trim, Math.round(SHOT_MAX_SEC * sr));
+const out = ctx.createBuffer(2, len, sr);
+const fade = Math.min(Math.round(0.04 * sr), Math.floor(len / 4));
+for (let c = 0; c < 2; c++) {
+const src = decoded.getChannelData(Math.min(c, decoded.numberOfChannels - 1));
+const o = out.getChannelData(c);
+for (let i = 0; i < len; i++) {
+let v = src[trim + i] || 0;
+if (i < fade) v *= i / fade;
+if (i > len - fade) v *= (len - i) / fade;
+o[i] = v;
+}
+}
+return out;
+}
+
+// Scatters one-shots across `seconds`, at most one per slot. Each call gets a
+// small random pitch nudge so repeats never sound like the same sample twice.
+function scheduleShots(context, shot, dest, seconds) {
+if (!shot) return;
+const slots = Math.floor(seconds / SPARSE_SLOT_SEC);
+for (let k = 0; k < slots; k++) {
+if (Math.random() > SPARSE_CHANCE) continue;
+const at = k * SPARSE_SLOT_SEC + Math.random() * SPARSE_SLOT_SEC;
+if (at + shot.duration > seconds) continue;
+const src = context.createBufferSource();
+src.buffer = shot;
+src.playbackRate.value = 0.94 + Math.random() * 0.12;
+src.connect(dest);
+src.start(at);
+}
+}
+
+// Live-preview equivalent: a look-ahead scheduler walking the same slots.
+let shotTimer = null;
+function startShotScheduler() {
+if (shotTimer) return;
+shotTimer = setInterval(() => {
+const now = ctx.currentTime;
+for (const s of SOUNDS) {
+if (!s.sparse) continue;
+const st = state[s.id];
+if (!st.shot || !st.gainNode) continue;
+if (st.nextSlot == null || st.nextSlot < now) st.nextSlot = now + 0.25;
+while (st.nextSlot < now + 2) {
+if (st.on && !lockActive && Math.random() <= SPARSE_CHANCE) {
+const src = ctx.createBufferSource();
+src.buffer = st.shot;
+src.playbackRate.value = 0.94 + Math.random() * 0.12;
+src.connect(st.gainNode);
+src.start(st.nextSlot + Math.random() * SPARSE_SLOT_SEC);
+}
+st.nextSlot += SPARSE_SLOT_SEC;
+}
+}
+}, 750);
+}
+
 function addDetunedVoices(id) {
 const st = state[id];
 for (let i = 1; i < VOICE_RATES.length; i++) {
@@ -296,18 +410,23 @@ async function ensureEngine() {
         const p = ctx.decodeAudioData(arr, res, rej);
         if (p && p.then) p.then(res, rej);
       });
-      const loop = buildLoop(decoded);
       const gain = ctx.createGain();
-      gain.gain.value = 0;
-      gain.connect(masterGain);
-      const src = ctx.createBufferSource();
-      src.buffer = loop; src.loop = true;
-      src.connect(gain); src.start();
-      state[s.id].loop = loop;
-      state[s.id].gainNode = gain;
-      state[s.id].src = src;
+gain.gain.value = 0;
+gain.connect(masterGain);
+state[s.id].gainNode = gain;
+if (s.sparse) {
+state[s.id].shot = trimShot(decoded);
+startShotScheduler();
+} else {
+const loop = buildLoop(decoded);
+const src = ctx.createBufferSource();
+src.buffer = loop; src.loop = true;
+src.connect(gain); src.start();
+state[s.id].loop = loop;
+state[s.id].src = src;
 state[s.id].voices = [src];
 addDetunedVoices(s.id);
+}
     } catch (e) {
       state[s.id].error = true;
     } finally {
@@ -329,7 +448,7 @@ function applyAllGains() {
   if (!buffersReady) return;
   for (const s of SOUNDS) {
     const st = state[s.id];
-    if (st.gainNode) st.gainNode.gain.setTargetAtTime(st.on && !lockActive ? st.vol * VOICE_GAIN : 0, ctx.currentTime, 0.15);
+    if (st.gainNode) st.gainNode.gain.setTargetAtTime(st.on && !lockActive ? st.vol * (s.sparse ? 1 : VOICE_GAIN) : 0, ctx.currentTime, 0.15);
   }
 }
 
@@ -341,7 +460,7 @@ function softclip(x) { return x / (1 + Math.abs(x) * 0.5); }
 // means the rendered file inherits that decorrelation, so a RENDER_SEC loop
 // sounds far less repetitive than simply tiling one 40-second clip.
 async function renderMixLoop() {
-const active = SOUNDS.filter(s => state[s.id].on && state[s.id].loop);
+const active = SOUNDS.filter(s => state[s.id].on && (state[s.id].loop || state[s.id].shot));
 if (!active.length) return null;
 const master = parseFloat(masterEl.value);
 const xf = Math.round(XF_SEC * SR);
@@ -352,8 +471,12 @@ const oc = new OAC(2, body + xf, SR);
 for (const s of active) {
 const st = state[s.id];
 const g = oc.createGain();
-g.gain.value = st.vol * master * VOICE_GAIN;
 g.connect(oc.destination);
+if (s.sparse) {
+g.gain.value = st.vol * master;
+scheduleShots(oc, st.shot, g, RENDER_SEC);
+} else {
+g.gain.value = st.vol * master * VOICE_GAIN;
 VOICE_RATES.forEach((rate, i) => {
 const src = oc.createBufferSource();
 src.buffer = st.loop; src.loop = true;
@@ -361,6 +484,7 @@ src.playbackRate.value = rate;
 src.connect(g);
 src.start(0, VOICE_OFFSETS[i] * st.loop.duration);
 });
+}
 }
 
 const rendered = await oc.startRendering();
@@ -602,6 +726,123 @@ function buildUI() {
     ch.addEventListener('click', () => applyScene(ch));
   });
 }
+// ── breathing exercises ──────────────────────────────────
+// A full-screen paced-breathing guide. Particles orbit the centre and the
+// ring expands and contracts with the phase, so the visual leads the breath
+// rather than just decorating it. Any sounds already playing keep playing.
+const BREATH_PATTERNS = {
+'478': [['Breathe in', 4], ['Hold', 7], ['Breathe out', 8]],
+'box': [['Breathe in', 4], ['Hold', 4], ['Breathe out', 4], ['Hold', 4]],
+'calm': [['Breathe in', 4], ['Breathe out', 6]]
+};
+const BREATH_COLORS = ['#41f2c9', '#62e8a0', '#8a6cff', '#3ed3f0'];
+const BREATH_MIN = 0.42; // ring scale at full exhale
+
+let bSteps = null, bTotal = 0, bStart = 0, bAnim = null;
+let bCanvas = null, bCtx = null, bMotes = [], bW = 0, bH = 0, bLastPhase = '';
+let bWakeLock = null;
+
+// Each step carries the scale it starts and ends at, so a hold after an
+// inhale stays open and a hold after an exhale stays closed.
+function buildSteps(raw) {
+let cur = BREATH_MIN;
+return raw.map(function (p) {
+const label = p[0], dur = p[1];
+let to = cur;
+if (label === 'Breathe in') to = 1;
+else if (label === 'Breathe out') to = BREATH_MIN;
+const step = { label: label, dur: dur, from: cur, to: to };
+cur = to;
+return step;
+});
+}
+
+function sizeBreatheCanvas() {
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+bW = window.innerWidth; bH = window.innerHeight;
+bCanvas.width = Math.round(bW * dpr);
+bCanvas.height = Math.round(bH * dpr);
+bCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+bCtx.fillStyle = '#050813';
+bCtx.fillRect(0, 0, bW, bH);
+}
+
+function breatheFrame(now) {
+const t = (now - bStart) / 1000;
+let tt = t % bTotal, acc = 0, step = bSteps[0];
+for (let i = 0; i < bSteps.length; i++) {
+if (tt < acc + bSteps[i].dur) { step = bSteps[i]; break; }
+acc += bSteps[i].dur;
+}
+const p = Math.min(1, Math.max(0, (tt - acc) / step.dur));
+const e = p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p);
+const scale = step.from + (step.to - step.from) * e;
+
+if (step.label !== bLastPhase) {
+document.getElementById('breathe-phase').textContent = step.label;
+bLastPhase = step.label;
+}
+document.getElementById('breathe-count').textContent = Math.ceil(step.dur - (tt - acc));
+
+bCtx.fillStyle = 'rgba(5,8,19,0.17)';
+bCtx.fillRect(0, 0, bW, bH);
+const cx = bW / 2, cy = bH / 2, R0 = Math.min(bW, bH) * 0.32;
+for (let i = 0; i < bMotes.length; i++) {
+const m = bMotes[i];
+m.a += m.sp * (0.6 + 0.8 * scale);
+const rad = R0 * (0.32 + m.r * 0.8) * scale;
+const x = cx + Math.cos(m.a) * rad;
+const y = cy + Math.sin(m.a) * rad * 0.94;
+bCtx.fillStyle = m.c;
+bCtx.globalAlpha = 0.42;
+bCtx.fillRect(x, y, m.w, m.w);
+}
+bCtx.globalAlpha = 1;
+bCtx.strokeStyle = 'rgba(170,195,255,0.42)';
+bCtx.lineWidth = 1.4;
+bCtx.beginPath();
+bCtx.arc(cx, cy, R0 * scale, 0, Math.PI * 2);
+bCtx.stroke();
+
+bAnim = requestAnimationFrame(breatheFrame);
+}
+
+async function openBreathe(key) {
+bSteps = buildSteps(BREATH_PATTERNS[key]);
+bTotal = bSteps.reduce(function (s, x) { return s + x.dur; }, 0);
+bCanvas = document.getElementById('breathe-canvas');
+bCtx = bCanvas.getContext('2d');
+document.getElementById('breathe-overlay').classList.add('open');
+sizeBreatheCanvas();
+bMotes = [];
+for (let i = 0; i < 520; i++) {
+bMotes.push({
+a: Math.random() * Math.PI * 2,
+r: Math.random(),
+sp: (0.0009 + Math.random() * 0.0032) * (Math.random() < 0.5 ? 1 : -1),
+w: 0.7 + Math.random() * 1.7,
+c: BREATH_COLORS[Math.floor(Math.random() * BREATH_COLORS.length)]
+});
+}
+bLastPhase = '';
+bStart = performance.now();
+cancelAnimationFrame(bAnim);
+bAnim = requestAnimationFrame(breatheFrame);
+try { if (navigator.wakeLock) bWakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+
+function closeBreathe() {
+cancelAnimationFrame(bAnim); bAnim = null;
+document.getElementById('breathe-overlay').classList.remove('open');
+try { if (bWakeLock) { bWakeLock.release(); bWakeLock = null; } } catch (e) {}
+}
+
+document.querySelectorAll('#breathe-chips .chip').forEach(function (ch) {
+ch.addEventListener('click', function () { openBreathe(ch.dataset.pattern); });
+});
+document.getElementById('breathe-close').addEventListener('click', closeBreathe);
+window.addEventListener('resize', function () { if (bAnim) sizeBreatheCanvas(); });
+
 buildUI();
 </script>
 </body>
