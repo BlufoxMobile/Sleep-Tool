@@ -163,7 +163,15 @@
 const AUDIO_DIR = 'audio/';
 const LOOP_SEC = 40;        // seamless loop length
 const XF_SEC = 2.5;         // crossfade for seamlessness
-const TRIM_SEC = 0.06;      // skip any codec priming at the clip start
+const TRIM_SEC = 0.06;
+const RENDER_SEC = 120; // screen-off loop length (was 40)
+
+// Two voices per sound, detuned by ~2%. Inaudible as pitch on ambient
+// material, but the voices drift apart so the pattern never re-aligns —
+// this is what stops crickets and frogs sounding like a tape loop.
+const VOICE_RATES = [1.0, 0.979];
+const VOICE_OFFSETS = [0, 0.47];
+const VOICE_GAIN = 1 / Math.sqrt(VOICE_RATES.length);      // skip any codec priming at the clip start
 
 const SOUNDS = [
   { id:'rain',      name:'Rain',         icon:'🌧️', vol:0.75 },
@@ -253,6 +261,18 @@ function buildLoop(decoded) {
 }
 
 // ── audio engine ─────────────────────────────────────────────────
+function addDetunedVoices(id) {
+const st = state[id];
+for (let i = 1; i < VOICE_RATES.length; i++) {
+const v = ctx.createBufferSource();
+v.buffer = st.loop; v.loop = true;
+v.playbackRate.value = VOICE_RATES[i];
+v.connect(st.gainNode);
+v.start(0, VOICE_OFFSETS[i] * st.loop.duration);
+st.voices.push(v);
+}
+}
+
 async function ensureEngine() {
   if (!ctx) {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -286,6 +306,8 @@ async function ensureEngine() {
       state[s.id].loop = loop;
       state[s.id].gainNode = gain;
       state[s.id].src = src;
+state[s.id].voices = [src];
+addDetunedVoices(s.id);
     } catch (e) {
       state[s.id].error = true;
     } finally {
@@ -307,49 +329,67 @@ function applyAllGains() {
   if (!buffersReady) return;
   for (const s of SOUNDS) {
     const st = state[s.id];
-    if (st.gainNode) st.gainNode.gain.setTargetAtTime(st.on && !lockActive ? st.vol : 0, ctx.currentTime, 0.15);
+    if (st.gainNode) st.gainNode.gain.setTargetAtTime(st.on && !lockActive ? st.vol * VOICE_GAIN : 0, ctx.currentTime, 0.15);
   }
 }
 
 // ── lock-screen mode ─────────────────────────────────────────────
 function softclip(x) { return x / (1 + Math.abs(x) * 0.5); }
 
-function renderMixWav() {
-  const n = Math.round(LOOP_SEC * SR);
-  const L = new Float32Array(n), R = new Float32Array(n);
-  const master = parseFloat(masterEl.value);
-  let any = false;
-  for (const s of SOUNDS) {
-    const st = state[s.id];
-    if (!st.on || !st.loop) continue;
-    any = true;
-    const g = st.vol * master;
-    const lc = st.loop.getChannelData(0);
-    const rc = st.loop.numberOfChannels > 1 ? st.loop.getChannelData(1) : lc;
-    const len = st.loop.length;
-    for (let i = 0; i < n; i++) {
-      const j = i < len ? i : i % len;     // safety if a loop is short
-      L[i] += lc[j] * g;
-      R[i] += rc[j] * g;
-    }
-  }
-  if (!any) return null;
-  for (let i = 0; i < n; i++) { L[i] = softclip(L[i]); R[i] = softclip(R[i]); }
+// Renders the current mix offline into a long, seamless stereo loop.
+// Running the same detuned two-voice setup through an OfflineAudioContext
+// means the rendered file inherits that decorrelation, so a RENDER_SEC loop
+// sounds far less repetitive than simply tiling one 40-second clip.
+async function renderMixLoop() {
+const active = SOUNDS.filter(s => state[s.id].on && state[s.id].loop);
+if (!active.length) return null;
+const master = parseFloat(masterEl.value);
+const xf = Math.round(XF_SEC * SR);
+const body = Math.round(RENDER_SEC * SR);
+const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+const oc = new OAC(2, body + xf, SR);
 
-  // encode interleaved 16-bit stereo WAV
-  const bytes = new DataView(new ArrayBuffer(44 + n * 4));
-  const ws = (o, s) => { for (let i = 0; i < s.length; i++) bytes.setUint8(o + i, s.charCodeAt(i)); };
-  ws(0, 'RIFF'); bytes.setUint32(4, 36 + n * 4, true); ws(8, 'WAVE');
-  ws(12, 'fmt '); bytes.setUint32(16, 16, true); bytes.setUint16(20, 1, true);
-  bytes.setUint16(22, 2, true); bytes.setUint32(24, SR, true);
-  bytes.setUint32(28, SR * 4, true); bytes.setUint16(32, 4, true); bytes.setUint16(34, 16, true);
-  ws(36, 'data'); bytes.setUint32(40, n * 4, true);
-  let o = 44;
-  for (let i = 0; i < n; i++) {
-    let v = Math.max(-1, Math.min(1, L[i])); bytes.setInt16(o, v * 32767, true); o += 2;
-    v = Math.max(-1, Math.min(1, R[i])); bytes.setInt16(o, v * 32767, true); o += 2;
-  }
-  return new Blob([bytes], { type: 'audio/wav' });
+for (const s of active) {
+const st = state[s.id];
+const g = oc.createGain();
+g.gain.value = st.vol * master * VOICE_GAIN;
+g.connect(oc.destination);
+VOICE_RATES.forEach((rate, i) => {
+const src = oc.createBufferSource();
+src.buffer = st.loop; src.loop = true;
+src.playbackRate.value = rate;
+src.connect(g);
+src.start(0, VOICE_OFFSETS[i] * st.loop.duration);
+});
+}
+
+const rendered = await oc.startRendering();
+const L = Float32Array.from(rendered.getChannelData(0));
+const R2 = Float32Array.from(rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : rendered.getChannelData(0));
+
+// Blend the tail back into the head so the rendered file loops cleanly.
+for (let i = 0; i < xf; i++) {
+const tt = i / xf;
+const fin = Math.sin(0.5 * Math.PI * tt);
+const fout = Math.cos(0.5 * Math.PI * tt);
+L[i] = L[i] * fin + L[body + i] * fout;
+R2[i] = R2[i] * fin + R2[body + i] * fout;
+}
+
+// encode interleaved 16-bit stereo WAV
+const bytes = new DataView(new ArrayBuffer(44 + body * 4));
+const ws = (o, s) => { for (let i = 0; i < s.length; i++) bytes.setUint8(o + i, s.charCodeAt(i)); };
+ws(0, 'RIFF'); bytes.setUint32(4, 36 + body * 4, true); ws(8, 'WAVE');
+ws(12, 'fmt '); bytes.setUint32(16, 16, true); bytes.setUint16(20, 1, true);
+bytes.setUint16(22, 2, true); bytes.setUint32(24, SR, true);
+bytes.setUint32(28, SR * 4, true); bytes.setUint16(32, 4, true); bytes.setUint16(34, 16, true);
+ws(36, 'data'); bytes.setUint32(40, body * 4, true);
+let o = 44;
+for (let i = 0; i < body; i++) {
+let v = Math.max(-1, Math.min(1, softclip(L[i]))); bytes.setInt16(o, v * 32767, true); o += 2;
+v = Math.max(-1, Math.min(1, softclip(R2[i]))); bytes.setInt16(o, v * 32767, true); o += 2;
+}
+return new Blob([bytes], { type: 'audio/wav' });
 }
 
 function startLockMode() {
@@ -365,7 +405,8 @@ function startLockMode() {
 async function continueStartLock() {
   await ensureEngine();
   if (!buffersReady) { setStatus('Still loading your sounds — one moment…'); setTimeout(continueStartLock, 500); return; }
-  const blob = renderMixWav();
+  setStatus('Building a ' + (RENDER_SEC / 60) + '-minute loop…');
+const blob = await renderMixLoop();
   if (!blob) { player.pause(); setStatus('Turn on at least one sound first, then try again.'); return; }
   const old = player.src;
   player.src = URL.createObjectURL(blob);
@@ -373,7 +414,7 @@ async function continueStartLock() {
 
   if (timerMin > 0) {
     player.loop = false;
-    loopsRemaining = Math.ceil((timerMin * 60) / LOOP_SEC);
+    loopsRemaining = Math.max(1, Math.ceil((timerMin * 60) / RENDER_SEC));
   } else {
     player.loop = true;
   }
@@ -502,7 +543,7 @@ function buildUI() {
     const sv = saved && saved.sounds && saved.sounds[s.id];
     const on = !!(sv && sv.on);
     const vol = sv && typeof sv.vol === 'number' ? sv.vol : s.vol;
-    state[s.id] = { on, vol, loop:null, gainNode:null, src:null };
+    state[s.id] = { on, vol, loop:null, gainNode:null, src:null, voices:[] };
     const card = document.createElement('div');
     card.className = on ? 'sound on' : 'sound'; card.id = 'card-' + s.id;
     card.innerHTML = `
