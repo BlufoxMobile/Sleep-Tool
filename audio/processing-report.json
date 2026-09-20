@@ -1,0 +1,72 @@
+{
+  "creek": {
+    "source_start_seconds": 7.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -10.81,
+    "bytes": 4553154
+  },
+  "cricket": {
+    "source_start_seconds": 177.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -10.94,
+    "bytes": 4617247
+  },
+  "fan": {
+    "source_start_seconds": 2.0,
+    "duration_seconds": 173.643625,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -12.47,
+    "bytes": 4193748
+  },
+  "frogs": {
+    "source_start_seconds": 402.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -12.43,
+    "bytes": 4680385
+  },
+  "ocean": {
+    "source_start_seconds": 157.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -11.35,
+    "bytes": 4546651
+  },
+  "rain": {
+    "source_start_seconds": 87.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -10.55,
+    "bytes": 4686087
+  },
+  "thunder": {
+    "source_start_seconds": 167.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -9.7,
+    "bytes": 4566119
+  },
+  "train": {
+    "source_start_seconds": 307.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -11.11,
+    "bytes": 4542382
+  },
+  "waterfall": {
+    "source_start_seconds": 52.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -12.35,
+    "bytes": 4542579
+  },
+  "wind": {
+    "source_start_seconds": 357.0,
+    "duration_seconds": 188.0,
+    "rms_dbfs": -24.0,
+    "peak_dbfs": -12.27,
+    "bytes": 4541677
+  }
+}

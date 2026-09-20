@@ -3,8 +3,7 @@
 All loops in `audio/` are derived from real field recordings released into the
 public domain. Each is **CC0 1.0** or **Public Domain Mark 1.0**, so no
 attribution is legally required — but credit is given here as a courtesy to the
-recordists. Files were trimmed, level-matched (−19.3 LUFS), and looped for this
-app. Several are the work of professional field recordists (Félix Blume,
+recordists. The current library uses ten newly prepared, longer excerpts (about 174–188 seconds), with DC removal, gentle peak softening, and −24 dBFS RMS matching. Rain on Tent and Campfire retain the existing 43-second files. Loop crossfades are applied in the app; source recordings are not pitch-shifted. Several are the work of professional field recordists (Félix Blume,
 Piotrek Żyła, Jillis Molenaar, and others) who release recordings into the
 public domain via the radio aporee ::: maps project.
 

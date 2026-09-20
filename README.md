@@ -1,62 +1,68 @@
-# Night Sounds (Sleep-Tool)
+# Night Sounds · Your sanctuary
 
-A tiny, single-page ambient sound mixer for falling asleep. Layer twelve real
-field recordings — rain, rain on a tent, thunder, wind, ocean, creek, waterfall,
-campfire, crickets, frogs, a night train, and a fan — or tap a one-touch scene,
-set a sleep timer, then start screen-off playback and lock your phone.
+A static, privacy-minded ambient mixer with a midnight-green interface, original
+lake illustration, scene presets, twelve natural recordings, saved mixes, a dim
+view, and an optional breathing guide. No account or build step is required.
 
-Earlier versions synthesized the sounds with oscillators and noise, which sounded
-thin and digital. This version uses **real CC0 / public-domain field recordings**
-— many from professional field recordists — processed into seamless loops and
-bundled with the app.
+## Audio
 
-## Features
+Ten recordings now use roughly three-minute excerpts from their original
+public-domain field recordings. Tent rain and campfire retain the original
+43-second assets. All sounds play at their natural pitch and pace: no detuned
+duplicate voices and no randomly chopped animal calls. Extended recordings are
+stereo AAC at 192 kbps / 32 kHz, level-matched to −24 dBFS RMS with gentle transient
+softening. The 32 kHz playback rate bounds mobile memory; this is not a lossless
+or full-bandwidth archival library. Source details are in [CREDITS.md](CREDITS.md).
 
-- **12 sounds**, all genuine field recordings, level-matched to −19.3 LUFS and
-  trimmed to 43-second clips (AAC `.m4a`, ~850 KB each, ~10 MB total).
-- **Scenes** — one-tap preset mixes: Stormy Night, Cozy Camp, Tent in Rain,
-  Night Train, Deep Fan.
-- **Remembered mix** — your sounds, volumes, master level, and timer are saved
-  locally (localStorage) and restored next time you open the app.
-- **Sleep timer** with fade-out, or play all night.
-- **Screen-off mode** — playback survives screen lock and shows on the lock
-  screen.
+Up to four selected sounds load on demand. Each is crossfaded back into itself
+with a correlation-aware equal-power blend (8 seconds, 2.5 seconds for tent rain).
+This avoids both a hard seam and a correlated-signal volume swell. The mixer
+renders a three-minute stereo WAV in memory, checks peak headroom, then loops it
+through one HTML audio element. The recordings and the rendered mix still
+repeat; crossfades reduce detectable joins but cannot guarantee imperceptible
+repetition for every recording or gapless media-element looping on every browser.
 
-## How it works
+Play, pause, and Stop control the same player. Stop also cancels any unfinished
+render so audio cannot unexpectedly resume. Changes while playing are staged
+until **Apply changes**. Favorite mixes and current settings stay in localStorage.
+Audio is fetched from this site; fonts use Google Fonts. There are no analytics.
 
-- The browser decodes each clip and builds a **seamless 40-second loop in
-  JavaScript** using an equal-power self-crossfade. Because the loop boundary is
-  constructed from adjacent samples of the original recording, there is no click
-  or gap on repeat — regardless of the audio codec's padding.
-- Live preview layers the loops through the Web Audio API.
-- **Screen-off mode** renders your current mix into a single seamless WAV loop
-  and plays it through an `<audio>` element, so playback survives screen lock and
-  appears on the lock screen (with a sleep-timer fade-out option).
+## Sleep timers and phones
 
-Nothing streams from a third party and nothing is tracked — the audio ships with
-the page and is decoded locally.
+All-night mode has no automatic stop. Keep the tab open. Media Session controls
+are provided where supported. Test screen locking on your actual phone before
+relying on an overnight session: calls, OS memory/battery policies, browser audio
+policies, and tab closure can interrupt playback.
 
-## Running it
+Timed sessions use a wall-clock deadline (time continues while paused). During
+the last minute, the app replaces the looping mix with a finite PCM fade-out;
+this avoids relying on programmatic volume, which iOS may ignore. If the browser
+suspends JavaScript before that transition, the timer may run late and the fade
+may be skipped. A native app or pre-rendered full-length session would be needed
+for stronger background timing guarantees. Changing timer settings while playing
+requires Apply changes and starts a new session deadline.
 
-This is a static site, but it must be **served over http(s)** (the app `fetch`es
-the audio files, which most browsers block from a `file://` page).
+## Run and check
 
-- **GitHub Pages:** push this repo, then enable Pages (Settings → Pages → deploy
-  from `main` / root). Open the published URL on your phone.
-- **Locally:** from the project folder run `python3 -m http.server 8000` and open
-  `http://localhost:8000`.
-
-## Files
-
-```
-index.html       the app (HTML + CSS + JS, no build step)
-audio/           rain, tentrain, thunder, wind, ocean, creek, waterfall,
-                 fire, cricket, frogs, train, fan  (.m4a loops)
-CREDITS.md       sources and licenses for every recording
+```sh
+python3 -m http.server 8000
+# Open http://localhost:8000
+node --test tests/*.test.cjs
 ```
 
-## Audio sources & license
+GitHub Pages can continue serving the repository root. No deployment framework
+or external audio service is needed.
 
-Every recording is **CC0 1.0** or **Public Domain Mark 1.0** — free to use and
-redistribute, including commercially, with no attribution legally required.
-Full details and source links are in [CREDITS.md](CREDITS.md).
+Files: `index.html` (markup), `styles.css` (design), `app.js` (controls and playback),
+`audio-core.js` (testable sample operations), `assets/` (original SVG artwork), and
+`audio/` (bundled recordings).
+
+## Validation
+
+- Automated checks: seam continuity, correlated-crossfade level, short/mono/stereo
+  input, silence, WAV encoding and peak headroom.
+- Desktop browser: selected scene renders to a 180-second looping media file;
+  play, pause, resume, Stop, saved settings and breathing dialog verified.
+- Responsive layout inspected at 390px; no horizontal page overflow.
+- Actual overnight playback and physical iOS/Android screen-lock behavior remain
+  device acceptance tests, not completed claims.
