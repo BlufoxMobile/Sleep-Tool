@@ -5,14 +5,16 @@
 <meta name="theme-color" content="#0d1919"><meta name="description" content="A quiet place to end your day. Blend natural field recordings into your own nighttime soundscape.">
 <title>Night Sounds · A little closer to quiet</title>
 <link rel="icon" href="assets/moon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css">
-<script src="audio-core.js" defer></script><script src="app.js" defer></script>
+<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="breathe.css">
+<script src="audio-core.js" defer></script><script src="app.js" defer></script><script src="breathe.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#library">Skip to sounds</a>
 <div class="shell">
 <header class="masthead"><a class="brand" href="./"><span class="brand-moon">☾</span> night sounds<span class="brand-dot">.</span></a><div class="header-right"><span class="local-note">A little space for yourself</span><button id="dim" class="quiet-button">☾ <span>Dim the lights</span></button></div></header>
 <main>
+<!-- "Calm me now" panic button: injected by breathe.js. -->
+<div id="calm-now-root"></div>
 <section class="hero" aria-labelledby="hero-title">
 <div class="hero-art" aria-hidden="true"></div>
 <div class="hero-copy"><p class="eyebrow"><span></span> LEAVE THE DAY BEHIND</p><h1 id="hero-title">A little closer<br>to <em>quiet.</em></h1><p class="hero-description">Rain on canvas. Waves along the shore.<br>Find your place, close your eyes, and settle in.</p><button id="hero-play" class="primary">Begin with tent rain <span>↗</span></button><p class="hero-footnote">Real recordings. Your own rhythm.</p></div>
@@ -24,11 +26,11 @@
 <section id="library" class="library" aria-labelledby="library-heading"><div class="library-heading"><div><p class="eyebrow">THE SOUND LIBRARY</p><h2 id="library-heading">Layer a little calm.</h2></div><span id="selected-count" class="count-badge">1 selected</span></div><div class="filters" role="group" aria-label="Filter sounds"><button class="active" data-filter="all" aria-pressed="true">All sounds</button><button data-filter="water" aria-pressed="false">Water</button><button data-filter="nature" aria-pressed="false">Nature</button><button data-filter="comfort" aria-pressed="false">Comfort</button></div><div id="sounds" class="sound-grid"></div><p class="library-note">Every sound has a place. Start with one or two, at a gentle volume.</p></section>
 <aside class="mix-panel" aria-labelledby="mix-title"><div class="mix-top"><p class="eyebrow">YOUR EVENING, YOUR WAY</p><span class="tiny-moon">☾</span></div><h2 id="mix-title">Your sanctuary.</h2><p class="muted" id="mix-description">A small shelter from the world.</p><div class="wave" aria-hidden="true"></div><div id="mix-list"></div><div class="control-label"><label for="master">Overall volume</label><output id="master-value" for="master">55%</output></div><input id="master" type="range" min="0" max="100" value="55" aria-label="Overall volume"><div class="timer-head"><label for="timer">Sleep timer</label><span id="timer-info">No time limit</span></div><select id="timer"><option value="0">All night · no timer</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="120">2 hours</option></select><p class="micro">Timed sessions ease down over the final minute.</p><button id="play" class="primary play-button">Play my soundscape <span>▷</span></button><button id="stop" class="quiet-button stop-button" disabled>Stop all sound</button><p id="status" role="status" aria-live="polite">Ready when you are.</p><div class="save-row"><button id="save" class="text-button">♡ Save this mix</button><button id="restore" class="text-button" hidden>Restore saved mix</button></div><div class="playback-note"><span>◉</span><p>For overnight listening, keep this tab open. Once playing, try locking your screen before settling in.</p></div></aside>
 </div>
-<section class="breathe-card"><div class="breath-symbol" aria-hidden="true">◎</div><div><p class="eyebrow">ONE LAST EXHALE</p><h2>Let the day soften.</h2><p>A gentle breathing rhythm to settle into your sounds.</p></div><button id="breathe-open" class="outline-button">Take a breath <span>↗</span></button></section>
+<!-- Breathing guide: markup is injected by breathe.js (owns breathe.js + breathe.css). -->
+<div id="breathe-root"></div>
 </main>
 <footer><a class="brand" href="./">☾ night sounds.</a><span>Just you and the quiet. No accounts. No tracking.</span><button id="about-open" class="text-button">About the recordings ↗</button></footer>
 </div>
-<dialog id="breathe-dialog" aria-labelledby="breath-heading"><button class="dialog-close" aria-label="Close breathing guide">×</button><p class="eyebrow">TAKE YOUR TIME</p><h2 id="breath-heading">Nothing to do but breathe.</h2><div class="breath-orb"><span id="breath-phase">Breathe in</span><strong id="breath-count">4</strong></div><label for="breath-pattern">Your rhythm</label><select id="breath-pattern"><option value="calm">Gentle · 4 in, 6 out</option><option value="box">Box · 4 in, 4 hold, 4 out, 4 hold</option><option value="478">4–7–8 · in, hold, out</option></select><p class="muted">Follow a comfortable rhythm. Your sounds keep playing.</p></dialog>
 <dialog id="about-dialog" aria-labelledby="about-heading"><button class="dialog-close" aria-label="Close recording details">×</button><p class="eyebrow">RECORDED IN THE REAL WORLD</p><h2 id="about-heading">Nature, at its own pace.</h2><p>These are field recordings, not synthesized imitations. They keep their original pitch and natural timing. Longer excerpts and gentle crossfades soften the point where each recording repeats.</p><p>Rain on Tent keeps the original recording you know. Each sound loads only when selected, and the finished mix plays locally from memory.</p><p>Phone browsers can interrupt audio for calls, battery restrictions, or when a tab is closed. Screen-lock behavior varies by device; test it before relying on an overnight session. Sleep timers may finish late if a browser suspends the page.</p><a href="CREDITS.md" target="_blank" rel="noopener">Recording sources & credits ↗</a></dialog>
 <audio id="player" playsinline preload="auto" loop></audio>
 </body></html>
