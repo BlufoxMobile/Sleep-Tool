@@ -1,0 +1,60 @@
+{
+ "sounds": {
+  "tentrain": {
+   "files": [
+    "tentrain-00.m4a",
+    "tentrain-01.m4a",
+    "tentrain-02.m4a",
+    "tentrain-03.m4a",
+    "tentrain-04.m4a",
+    "tentrain-05.m4a",
+    "tentrain-06.m4a",
+    "tentrain-07.m4a",
+    "tentrain-08.m4a",
+    "tentrain-09.m4a"
+   ],
+   "peak": 0.7644,
+   "rms_dbfs": -24.15
+  },
+  "rain": {
+   "files": [
+    "rain-00.m4a",
+    "rain-01.m4a",
+    "rain-02.m4a",
+    "rain-03.m4a",
+    "rain-04.m4a",
+    "rain-05.m4a",
+    "rain-06.m4a",
+    "rain-07.m4a",
+    "rain-08.m4a",
+    "rain-09.m4a"
+   ],
+   "peak": 0.8173,
+   "rms_dbfs": -24.14
+  },
+  "thunder": {
+   "files": [
+    "thunder-00.m4a",
+    "thunder-01.m4a",
+    "thunder-02.m4a",
+    "thunder-03.m4a",
+    "thunder-04.m4a",
+    "thunder-05.m4a",
+    "thunder-06.m4a",
+    "thunder-07.m4a",
+    "thunder-08.m4a",
+    "thunder-09.m4a"
+   ],
+   "peak": 0.7084,
+   "rms_dbfs": -24.22
+  }
+ },
+ "version": "v3",
+ "sampleRate": 32000,
+ "channels": 2,
+ "loopFrames": 12480000,
+ "chunkFrames": 1248000,
+ "padFrames": 8000,
+ "chunks": 10,
+ "joinFade": 2048
+}

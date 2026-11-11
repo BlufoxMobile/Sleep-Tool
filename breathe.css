@@ -1,1 +1,255 @@
-/* Breathing guide styles. Base breathing rules still live in styles.css; override here. */
+/* Night Sounds · breathing guide ("Calm me now" + "Take a breath").
+   Every color comes from a custom property: the page tokens in styles.css (:root) or the
+   --breath-* tokens below, which are derived from them. Retheme by changing tokens, not rules.
+   Old breathing rules in styles.css (.breathe-card, .breath-orb, #breathe-dialog …) no longer
+   match anything; the base `dialog` rules are overridden per dialog below. */
+
+/* Plain fallbacks first (browsers without color-mix) … */
+:root {
+  --breath-night: var(--bg);              /* calm-session background: true black */
+  --breath-surface: var(--panel);         /* practice dialog, cards */
+  --breath-raised: var(--card);           /* buttons that sit on the night background */
+  --breath-edge: var(--line-strong);      /* quiet borders (pills, chips, dialog edge) */
+  --breath-edge-strong: var(--ember);     /* the Calm me now outline, selected chips */
+  --breath-ink: var(--text);              /* big instruction text: amber, 7.4:1 */
+  --breath-soft-ink: var(--muted);        /* hints and secondary copy: 5.1:1 */
+  --breath-faint-ink: var(--muted);       /* safety line, footnotes: kept at AA */
+  --breath-orb: var(--accent);            /* the orb and dots: amber, dimmed by opacity */
+  --breath-orb-ring: var(--line-strong);  /* the orb's guide ring */
+  --breath-glow: transparent;             /* the faint halo behind the orb */
+  --breath-track: var(--line);            /* progress track */
+  --breath-scrim: var(--backdrop);        /* behind the practice dialog */
+}
+/* … then the translucent values, mixed from the page tokens (amber on black). */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root {
+    --breath-orb-ring: color-mix(in srgb, var(--accent) 34%, transparent);
+    --breath-glow: color-mix(in srgb, var(--accent) 9%, transparent);
+    --breath-track: color-mix(in srgb, var(--text) 14%, transparent);
+  }
+}
+
+.bx-sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* ---------- Calm me now (top of the page) ---------- */
+.bx-now {
+  display: flex; align-items: center; gap: 18px; width: 100%; min-height: 88px; margin: 0 0 18px;
+  padding: 16px 20px 16px 18px; border: 1px solid var(--breath-edge-strong); border-radius: 18px;
+  background: linear-gradient(100deg, var(--breath-raised), var(--breath-surface) 58%, var(--bg));
+  color: var(--breath-ink); text-align: left; font: inherit;
+}
+.bx-now:hover { border-color: var(--gold); }
+.bx-now-orb {
+  position: relative; flex-shrink: 0; width: 54px; height: 54px; border-radius: 50%;
+  border: 1px solid var(--breath-orb-ring); display: grid; place-items: center;
+}
+.bx-now-orb i {
+  width: 78%; height: 78%; border-radius: 50%; opacity: .5;
+  background: radial-gradient(circle at 50% 42%, var(--breath-orb), transparent 72%);
+  animation: bx-idle 10s ease-in-out infinite;
+}
+@keyframes bx-idle { 0%, 100% { transform: scale(.6); } 40% { transform: scale(1); } }
+.bx-now-text { min-width: 0; }
+.bx-now-text strong { display: block; font: 400 31px/1.05 var(--serif); letter-spacing: -.5px; color: var(--breath-ink); }
+.bx-now-text span { display: block; margin-top: 6px; font-size: 12.5px; line-height: 1.45; color: var(--breath-soft-ink); }
+.bx-now-go {
+  margin-left: auto; flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid var(--breath-edge-strong); display: grid; place-items: center;
+  font-size: 19px; color: var(--gold);
+}
+
+/* ---------- Shared controls ---------- */
+.bx-pill {
+  min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 16px; border: 1px solid var(--breath-edge); border-radius: 999px;
+  background: transparent; color: var(--breath-soft-ink); font-size: 14px;
+}
+.bx-pill:hover { color: var(--breath-ink); border-color: var(--breath-edge-strong); }
+.bx-pill span[aria-hidden] { font-size: 19px; line-height: 1; }
+.bx-sound { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.bx-sound-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.bx-sound-toggle[aria-pressed="true"] { color: var(--breath-ink); }
+.bx-sound-toggle[aria-pressed="false"] { color: var(--breath-faint-ink); }
+/* `.bx-sound input.bx-volume` outranks the page's global input[type=range] sizing */
+.bx-sound input.bx-volume { width: 104px; height: 44px; accent-color: var(--breath-orb); }
+.bx-sound input.bx-volume::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -8.5px; background: var(--breath-orb); }
+.bx-sound input.bx-volume::-moz-range-thumb { width: 20px; height: 20px; background: var(--breath-orb); }
+.bx-sound input.bx-volume:disabled { opacity: .35; cursor: default; }
+.bx-quiet { margin-top: 22px; }
+
+/* Orb: a fixed guide ring, and a warm core that grows on the in-breath and shrinks on the out. */
+.bx-orb { position: relative; flex-shrink: 0; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; }
+.bx-orb::before {
+  content: ''; position: absolute; inset: -18%; border-radius: 50%;
+  background: radial-gradient(circle, var(--breath-glow), transparent 68%); pointer-events: none;
+}
+.bx-orb-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--breath-orb-ring); }
+.bx-orb-core { position: absolute; inset: 0; border-radius: 50%; transform: scale(.52); opacity: .6; will-change: transform, opacity; }
+.bx-orb-core::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; opacity: .34;
+  background: radial-gradient(circle at 50% 44%, var(--breath-orb) 0%, var(--breath-orb) 18%, transparent 72%);
+}
+.bx-orb-core::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--breath-orb-ring); }
+
+/* ---------- Calm session: full screen, very dark ---------- */
+#bx-calm {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0;
+  border: 0; border-radius: 0; overflow: auto; overscroll-behavior: contain; outline: none;
+  background: radial-gradient(ellipse 80% 60% at 50% 38%, var(--breath-glow), transparent 70%), var(--breath-night);
+  color: var(--breath-ink); text-align: center;
+}
+#bx-calm::backdrop { background: var(--breath-night); backdrop-filter: none; }
+#bx-calm p { margin: 0; color: inherit; font-size: inherit; }
+.bx-calm-wrap {
+  display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 640px; min-height: 100%; margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.bx-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+.bx-progress { width: 100%; height: 2px; margin-top: 8px; border-radius: 2px; background: var(--breath-track); overflow: hidden; }
+.bx-progress i { display: block; width: 100%; height: 100%; background: var(--breath-orb-ring); transform: scaleX(0); transform-origin: left; }
+.bx-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 18px 0 8px; }
+.bx-view[hidden] { display: none; }
+#bx-calm .bx-orb { width: min(66vw, 300px, 40vh); }
+#bx-calm .bx-orb-num { position: relative; font: 400 64px/1 var(--serif); color: var(--breath-orb); opacity: .85; }
+/* Fixed-height text block (room for two lines of each) so the orb never shifts between phases. */
+.bx-words { display: flex; flex-direction: column; align-items: center; margin-top: 30px; font-size: clamp(30px, 8.6vw, 42px); min-height: calc(2.3em + 56px); }
+#bx-calm .bx-say { font: 400 1em/1.15 var(--serif); letter-spacing: -.4px; color: var(--breath-ink); max-width: 15ch; }
+#bx-calm .bx-hint { margin-top: 8px; font-size: 16px; line-height: 1.5; color: var(--breath-soft-ink); max-width: 30ch; }
+#bx-calm .bx-say, #bx-calm .bx-hint, #bx-calm .bx-note, #bx-calm .bx-title, #bx-calm .bx-sub, #bx-calm .bx-safety, .bx-pattern-note { text-wrap: balance; }
+#bx-calm .bx-note {
+  margin-top: 20px; min-height: 2.9em; max-width: 25ch; font: italic 400 19px/1.45 var(--serif);
+  color: var(--breath-soft-ink); transition: opacity .6s ease;
+}
+#bx-calm .bx-title { font: 400 clamp(32px, 9vw, 44px)/1.12 var(--serif); letter-spacing: -.4px; color: var(--breath-ink); outline: none; max-width: 16ch; }
+#bx-calm .bx-sub { margin-top: 12px; font-size: 16px; line-height: 1.5; color: var(--breath-soft-ink); max-width: 30ch; }
+.bx-choices { display: grid; gap: 12px; width: 100%; max-width: 360px; margin-top: 30px; }
+.bx-big {
+  min-height: 74px; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 14px 20px;
+  border: 1px solid var(--breath-edge); border-radius: 16px; background: var(--breath-raised); color: var(--breath-ink); text-align: left;
+}
+.bx-big:not([hidden]) ~ .bx-big { background: transparent; }
+.bx-big:first-child, .bx-big[hidden] + .bx-big { border-color: var(--breath-edge-strong); }
+.bx-big strong { font: 400 23px/1.2 var(--serif); }
+.bx-big span { font-size: 13px; color: var(--breath-soft-ink); }
+.bx-big:hover { border-color: var(--gold); }
+.bx-big[hidden] { display: none; }
+#bx-calm .bx-safety { margin-top: 10px; max-width: 36ch; font-size: 12px; line-height: 1.5; color: var(--breath-faint-ink); }
+#bx-calm .bx-safety a { color: var(--breath-soft-ink); text-decoration: underline; text-underline-offset: 2px; padding: 4px 1px; }
+
+/* Grounding */
+.bx-steps { display: flex; gap: 8px; margin: 0 0 26px; padding: 0; list-style: none; }
+.bx-steps li {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px;
+  border: 1px solid var(--breath-edge); color: var(--breath-faint-ink);
+}
+.bx-steps li.is-now { border-color: var(--breath-orb); color: var(--breath-ink); }
+.bx-steps li.is-done { border-color: var(--breath-orb-ring); color: var(--breath-faint-ink); opacity: .6; }
+.bx-pad {
+  position: relative; width: min(64vw, 240px, 34vh); aspect-ratio: 1; margin-top: 30px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  border: 1px solid var(--breath-orb-ring); background: radial-gradient(circle, var(--breath-glow), transparent 70%);
+  color: var(--breath-soft-ink); touch-action: manipulation;
+}
+.bx-pad:active:not(:disabled) { border-color: var(--breath-orb); }
+.bx-pad:disabled { opacity: 1; cursor: default; }
+.bx-dots { display: flex; gap: 11px; }
+.bx-dots i { width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--breath-orb); opacity: .7; transition: background .3s, opacity .3s; }
+.bx-dots i.on { background: var(--breath-orb); opacity: .75; }
+.bx-pad-label { font-size: 14px; }
+
+/* ---------- Take a breath (practice card on the page) ---------- */
+.bx-card {
+  display: flex; align-items: center; gap: 22px; margin-top: 39px; padding: 27px 29px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: linear-gradient(110deg, var(--breath-raised), var(--breath-surface));
+}
+.bx-card-orb { position: relative; flex-shrink: 0; width: 68px; height: 68px; border-radius: 50%; border: 1px solid var(--breath-orb-ring); display: grid; place-items: center; }
+.bx-card-orb i { width: 70%; height: 70%; border-radius: 50%; opacity: .45; background: radial-gradient(circle at 50% 42%, var(--breath-orb), transparent 72%); }
+.bx-card-copy { flex: 1; min-width: 0; }
+.bx-card .eyebrow { font-size: 8px; }
+.bx-card h2 { font-size: 28px; margin: 7px 0; }
+.bx-card-copy p:not(.eyebrow) { font-size: 12px; color: var(--muted); }
+.bx-outline {
+  margin-left: auto; min-height: 44px; white-space: nowrap; padding: 11px 16px; border: 1px solid var(--breath-edge-strong); border-radius: 8px;
+  background: transparent; color: var(--text); font-size: 12px;
+}
+.bx-outline span { margin-left: 18px; }
+.bx-outline:hover { border-color: var(--gold); }
+
+/* ---------- Practice dialog ---------- */
+#bx-practice {
+  width: calc(100% - 24px); max-width: 520px; max-height: calc(100% - 24px); padding: 30px 26px 22px; overflow: auto; overscroll-behavior: contain;
+  border: 1px solid var(--breath-edge); border-radius: 20px; background: var(--breath-surface); color: var(--breath-ink);
+  text-align: center; outline: none;
+}
+#bx-practice::backdrop { background: var(--breath-scrim); backdrop-filter: blur(6px); }
+#bx-practice h2 { margin: 8px 0 0; font-size: 28px; }
+#bx-practice p:where(:not(.eyebrow)) { margin: 0; color: var(--breath-soft-ink); } /* :where keeps this below the rules that follow */
+.bx-x { position: absolute; right: 8px; top: 8px; width: 44px; height: 44px; border: 0; background: none; color: var(--muted); font-size: 28px; line-height: 1; }
+.bx-x:hover { color: var(--text); }
+#bx-practice .bx-orb { width: min(46vw, 184px); margin: 22px auto 22px; }
+.bx-orb-text { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bx-orb-label { font-size: 13px; color: var(--breath-ink); }
+.bx-orb-count { font: 400 40px/1.1 var(--serif); color: var(--breath-orb); }
+.bx-patterns { margin: 0; padding: 0; border: 0; min-width: 0; }
+.bx-patterns legend { padding: 0; margin: 0 auto 10px; font-size: 12px; color: var(--breath-soft-ink); }
+.bx-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bx-chip { position: relative; display: block; cursor: pointer; }
+.bx-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.bx-chip-body {
+  display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: 10px 12px; text-align: left;
+  border: 1px solid var(--breath-edge); border-radius: 12px; background: var(--breath-night);
+}
+.bx-chip strong { font-size: 13.5px; font-weight: 550; color: var(--breath-ink); }
+.bx-chip small { font-size: 11px; color: var(--breath-soft-ink); }
+.bx-chip em { font-style: normal; font-size: 10px; letter-spacing: .6px; text-transform: uppercase; color: var(--gold); margin-top: 2px; }
+.bx-chip input:checked + .bx-chip-body { border-color: var(--breath-edge-strong); background: var(--breath-raised); }
+.bx-chip input:focus-visible + .bx-chip-body { outline: 2px solid var(--accent); outline-offset: 2px; }
+#bx-practice .bx-pattern-note { min-height: 3em; margin: 12px auto 0; max-width: 40ch; font-size: 12.5px; line-height: 1.5; }
+#bx-practice .bx-pattern-note.is-caution { color: var(--gold); }
+.bx-bar-practice { justify-content: center; margin-top: 10px; }
+#bx-practice .bx-foot { margin-top: 10px; font-size: 11.5px; line-height: 1.55; color: var(--breath-faint-ink); }
+#bx-practice .bx-foot strong { font-weight: 550; color: var(--breath-soft-ink); }
+
+/* ---------- Phones ---------- */
+@media (max-width: 720px) {
+  .bx-now { min-height: 82px; gap: 14px; padding: 14px 14px 14px 14px; margin-bottom: 14px; border-radius: 16px; }
+  .bx-now-orb { width: 46px; height: 46px; }
+  .bx-now-text strong { font-size: 28px; }
+  .bx-now-text span { font-size: 12px; }
+  .bx-now-go { width: 40px; height: 40px; }
+  .bx-card { padding: 22px 19px; gap: 15px; flex-wrap: wrap; }
+  .bx-card-copy { flex: 1 1 calc(100% - 62px); }
+  .bx-card-orb { width: 47px; height: 47px; }
+  .bx-card h2 { font-size: 25px; }
+  .bx-outline { margin-left: 62px; }
+  #bx-practice { padding: 26px 16px 18px; }
+  .bx-sound input.bx-volume { width: 88px; }
+  .bx-pill { padding: 0 13px; }
+}
+/* Short screens (Safari with toolbars, small phones): tighten so the calm session fits without scrolling. */
+@media (max-height: 760px) {
+  #bx-calm .bx-orb { width: min(60vw, 260px, 33vh); }
+  .bx-view { padding: 10px 0 4px; }
+  .bx-words { margin-top: 18px; font-size: clamp(28px, 8vw, 38px); }
+  #bx-calm .bx-note { margin-top: 10px; font-size: 17px; }
+  #bx-calm .bx-quiet { margin-top: 12px; }
+  .bx-steps { margin-bottom: 16px; }
+  .bx-pad { margin-top: 18px; width: min(60vw, 220px, 30vh); }
+  .bx-choices { margin-top: 20px; }
+}
+@media (max-height: 600px) {
+  #bx-calm .bx-orb { width: min(56vw, 29vh); }
+  .bx-words { margin-top: 12px; }
+  .bx-progress { margin-top: 4px; }
+  #bx-calm .bx-safety { margin-top: 4px; font-size: 11px; }
+}
+@media (max-width: 360px) {
+  .bx-now-text span { display: none; }
+  .bx-sound-toggle span { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bx-now-orb i { animation: none; transform: scale(.85); }
+  #bx-calm .bx-note, .bx-dots i { transition: none; }
+}

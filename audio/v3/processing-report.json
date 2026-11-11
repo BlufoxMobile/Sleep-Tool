@@ -1,0 +1,934 @@
+{
+ "sounds": {
+  "tentrain": {
+   "name": "Rain on Tent",
+   "source": "https://archive.org/details/aporee_70996_82798",
+   "source_file": "1711160710pluietentecampgroundAckerman.flac",
+   "source_md5": "3fec2df96879dbc4ad467246bdbbc5a1",
+   "source_seconds": 451.64,
+   "excluded": [
+    [
+     0.0,
+     0.5,
+     "recorder start"
+    ],
+    [
+     192.0,
+     216.0,
+     "vehicle engine idling/revving (99.6, 130-160 Hz tones) and a +23 dB thump at 199.6 s"
+    ],
+    [
+     446.0,
+     451.6,
+     "handling noise as the recording stops"
+    ]
+   ],
+   "dethump": {
+    "frames_reduced_pct": 1.46,
+    "max_reduction_db": 18.6
+   },
+   "source_ranges_used_seconds": [
+    [
+     0.5,
+     192.0
+    ],
+    [
+     216.0,
+     446.0
+    ]
+   ],
+   "target_band_levels_db": [
+    -62.35,
+    -56.9,
+    -52.25,
+    -47.51,
+    -44.36,
+    -44.4,
+    -48.13,
+    -52.74,
+    -55.9,
+    -59.25
+   ],
+   "segment_levelling": [
+    {
+     "broadband_gain_db": [
+      -0.59,
+      9.87
+     ],
+     "balance_correction_db": [
+      2.8,
+      3.48
+     ],
+     "max_tilt_correction_db": 7.57
+    },
+    {
+     "broadband_gain_db": [
+      -3.95,
+      2.82
+     ],
+     "balance_correction_db": [
+      3.47,
+      3.87
+     ],
+     "max_tilt_correction_db": 2.49
+    }
+   ],
+   "joins_seconds_in_loop": [
+    185.75,
+    10.0
+   ],
+   "join_correlations": [
+    -0.0056,
+    0.0003
+   ],
+   "crossfades_seconds": {
+    "seam": 20.0,
+    "internal": 11.5
+   },
+   "loop_levelling": {
+    "broadband_gain_db": [
+     0.24,
+     0.51
+    ],
+    "balance_correction_db": [
+     -0.07,
+     0.25
+    ],
+    "max_tilt_correction_db": 1.74
+   },
+   "peak_softening": {
+    "samples_reduced_1db_pct": 0.76,
+    "samples_reduced_pct": 2.027,
+    "max_reduction_db": 10.84
+   },
+   "file_starts_at_loop_seconds": 330.75,
+   "joins_seconds_in_file": [
+    245.0,
+    69.25
+   ],
+   "master": {
+    "loop_seconds": 390,
+    "wrap_point": {
+     "rms_dev_db": 0.21,
+     "rms_dev_vs_median_db": 0.2,
+     "band_dev_db": 0.61,
+     "centroid_dev_pct": 3.5,
+     "surrounding_2s_rms_spread_db": 0.7,
+     "sample_step_vs_p99_step": 0.216,
+     "before_after_minute_rms_db": [
+      -24.02,
+      -24.07
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.4,
+     "rms_dev_vs_median_db": 0.42,
+     "band_dev_db": 0.69,
+     "centroid_dev_pct": 4.5,
+     "surrounding_2s_rms_spread_db": 0.74,
+     "sample_step_vs_p99_step": 0.158,
+     "before_after_minute_rms_db": [
+      -24.04,
+      -23.96
+     ]
+    },
+    "joins": [
+     {
+      "rms_dev_db": 0.18,
+      "rms_dev_vs_median_db": 0.16,
+      "band_dev_db": 0.52,
+      "centroid_dev_pct": 2.6,
+      "surrounding_2s_rms_spread_db": 0.7,
+      "sample_step_vs_p99_step": 1.301,
+      "before_after_minute_rms_db": [
+       -23.91,
+       -24.07
+      ]
+     }
+    ],
+    "typical_2s_window_dev_db": {
+     "rms_dev_db_p50_p95": [
+      0.16,
+      0.47
+     ],
+     "rms_dev_vs_median_db_p50_p95": [
+      0.16,
+      0.47
+     ],
+     "band_dev_db_p50_p95": [
+      0.52,
+      1.32
+     ],
+     "centroid_dev_pct_p50_p95": [
+      1.72,
+      5.57
+     ]
+    },
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -24.55,
+      -23.28
+     ],
+     "2s_rms_p5_p95_spread_db": 0.77,
+     "10s_rms_min_max_db": [
+      -24.29,
+      -23.8
+     ],
+     "10s_rms_p5_p95_spread_db": 0.27,
+     "30s_rms_min_max_db": [
+      -24.09,
+      -23.89
+     ],
+     "30s_rms_p5_p95_spread_db": 0.18,
+     "rms_dbfs": -24.0,
+     "peak_dbfs": -2.9
+    }
+   },
+   "encoded": {
+    "codec": "AAC-LC 160kbps 32000 Hz stereo (ffmpeg aac, PNS and intensity stereo off)",
+    "files": [
+     "tentrain-00.m4a",
+     "tentrain-01.m4a",
+     "tentrain-02.m4a",
+     "tentrain-03.m4a",
+     "tentrain-04.m4a",
+     "tentrain-05.m4a",
+     "tentrain-06.m4a",
+     "tentrain-07.m4a",
+     "tentrain-08.m4a",
+     "tentrain-09.m4a"
+    ],
+    "bytes": 8114884,
+    "decoded_chunk_lengths": [
+     1264640
+    ],
+    "chunk_join_lags": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "chunk_join_correlations": [
+     0.9783,
+     0.9875,
+     0.9801,
+     0.9755,
+     0.9799,
+     0.9694,
+     0.9807,
+     0.9809,
+     0.9803,
+     0.9781
+    ],
+    "codec_snr_db": 15.99,
+    "wrap_point": {
+     "rms_dev_db": 0.14,
+     "rms_dev_vs_median_db": 0.14,
+     "band_dev_db": 0.57,
+     "centroid_dev_pct": 3.8,
+     "surrounding_2s_rms_spread_db": 0.73,
+     "sample_step_vs_p99_step": 0.296,
+     "before_after_minute_rms_db": [
+      -24.19,
+      -24.23
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.44,
+     "rms_dev_vs_median_db": 0.45,
+     "band_dev_db": 0.8,
+     "centroid_dev_pct": 4.4,
+     "surrounding_2s_rms_spread_db": 0.82,
+     "sample_step_vs_p99_step": 0.148,
+     "before_after_minute_rms_db": [
+      -24.21,
+      -24.09
+     ]
+    },
+    "chunk_join_error_vs_overall_db_max": 1.32,
+    "chunk_join_step_vs_p99_step_max": 0.768,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -24.75,
+      -23.36
+     ],
+     "2s_rms_p5_p95_spread_db": 0.81,
+     "10s_rms_min_max_db": [
+      -24.49,
+      -23.9
+     ],
+     "10s_rms_p5_p95_spread_db": 0.31,
+     "30s_rms_min_max_db": [
+      -24.26,
+      -24.01
+     ],
+     "30s_rms_p5_p95_spread_db": 0.23,
+     "rms_dbfs": -24.15,
+     "peak_dbfs": -2.33
+    }
+   },
+   "before_v2": {
+    "loop_seconds": 40.5,
+    "seam": {
+     "rms_dev_db": 0.58,
+     "rms_dev_vs_median_db": 0.35,
+     "band_dev_db": 1.48,
+     "centroid_dev_pct": 5.8,
+     "surrounding_2s_rms_spread_db": 1.7,
+     "sample_step_vs_p99_step": 0.178,
+     "before_after_minute_rms_db": [
+      -23.24,
+      -24.11
+     ]
+    },
+    "typical_2s_window_dev_db": {
+     "rms_dev_db_p50_p95": [
+      0.39,
+      1.11
+     ],
+     "rms_dev_vs_median_db_p50_p95": [
+      0.39,
+      1.27
+     ],
+     "band_dev_db_p50_p95": [
+      0.84,
+      2.86
+     ],
+     "centroid_dev_pct_p50_p95": [
+      2.2,
+      9.84
+     ]
+    },
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -25.28,
+      -22.92
+     ],
+     "2s_rms_p5_p95_spread_db": 1.7,
+     "10s_rms_min_max_db": [
+      -24.19,
+      -23.21
+     ],
+     "10s_rms_p5_p95_spread_db": 0.94,
+     "30s_rms_min_max_db": [
+      -23.83,
+      -23.83
+     ],
+     "30s_rms_p5_p95_spread_db": 0.0,
+     "rms_dbfs": -23.66,
+     "peak_dbfs": 0.16
+    }
+   }
+  },
+  "rain": {
+   "name": "Summer Rain",
+   "source": "https://archive.org/details/aporee_50040_57088",
+   "source_file": "sateenropina.mp3",
+   "source_md5": "2434b6efa85bcce192d1f5005bd302ab",
+   "source_seconds": 1523.37,
+   "excluded": [
+    [
+     0.0,
+     1002.0,
+     "frequent cars on the wet street (12 passes of +10 to +20 dB, 10-27 s each)"
+    ],
+    [
+     1472.0,
+     1523.4,
+     "car passes from 1475 s and the recording end"
+    ]
+   ],
+   "dethump": {
+    "frames_reduced_pct": 5.19,
+    "max_reduction_db": 9.8
+   },
+   "drop_softening": {
+    "single_drop_max_reduction_db": 13.2,
+    "single_drop_frames_reduced_pct": 9.06,
+    "cluster_max_reduction_db": 4.8,
+    "cluster_frames_reduced_pct": 33.1
+   },
+   "seam_search_cost_db": 0.294,
+   "source_ranges_used_seconds": [
+    [
+     1013.0,
+     1423.0
+    ]
+   ],
+   "target_band_levels_db": [
+    -45.26,
+    -48.09,
+    -48.83,
+    -46.78,
+    -46.05,
+    -47.44,
+    -51.97,
+    -52.43,
+    -54.15,
+    -56.84
+   ],
+   "segment_levelling": [
+    {
+     "broadband_gain_db": [
+      -1.65,
+      0.9
+     ],
+     "balance_correction_db": [
+      0.7,
+      2.08
+     ],
+     "max_tilt_correction_db": 1.54
+    }
+   ],
+   "joins_seconds_in_loop": [
+    10.0
+   ],
+   "join_correlations": [
+    0.0014
+   ],
+   "crossfades_seconds": {
+    "seam": 20.0,
+    "internal": 0
+   },
+   "loop_levelling": {
+    "broadband_gain_db": [
+     -0.45,
+     0.29
+    ],
+    "balance_correction_db": [
+     -0.07,
+     0.08
+    ],
+    "max_tilt_correction_db": 0.62
+   },
+   "peak_softening": {
+    "samples_reduced_1db_pct": 0.337,
+    "samples_reduced_pct": 0.869,
+    "max_reduction_db": 11.79
+   },
+   "file_starts_at_loop_seconds": 65.25,
+   "joins_seconds_in_file": [
+    334.75
+   ],
+   "master": {
+    "loop_seconds": 390,
+    "wrap_point": {
+     "rms_dev_db": 0.71,
+     "rms_dev_vs_median_db": 0.6,
+     "band_dev_db": 0.91,
+     "centroid_dev_pct": 9.6,
+     "surrounding_2s_rms_spread_db": 2.46,
+     "sample_step_vs_p99_step": 0.289,
+     "before_after_minute_rms_db": [
+      -24.08,
+      -24.21
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.36,
+     "rms_dev_vs_median_db": 0.13,
+     "band_dev_db": 1.67,
+     "centroid_dev_pct": 10.7,
+     "surrounding_2s_rms_spread_db": 3.05,
+     "sample_step_vs_p99_step": 0.291,
+     "before_after_minute_rms_db": [
+      -23.95,
+      -24.13
+     ]
+    },
+    "joins": [],
+    "typical_2s_window_dev_db": {
+     "rms_dev_db_p50_p95": [
+      0.68,
+      1.81
+     ],
+     "rms_dev_vs_median_db_p50_p95": [
+      0.65,
+      1.84
+     ],
+     "band_dev_db_p50_p95": [
+      1.4,
+      2.79
+     ],
+     "centroid_dev_pct_p50_p95": [
+      7.73,
+      21.48
+     ]
+    },
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -26.45,
+      -21.48
+     ],
+     "2s_rms_p5_p95_spread_db": 3.15,
+     "10s_rms_min_max_db": [
+      -24.92,
+      -22.77
+     ],
+     "10s_rms_p5_p95_spread_db": 1.42,
+     "30s_rms_min_max_db": [
+      -24.4,
+      -23.44
+     ],
+     "30s_rms_p5_p95_spread_db": 0.85,
+     "rms_dbfs": -24.0,
+     "peak_dbfs": -2.96
+    }
+   },
+   "encoded": {
+    "codec": "AAC-LC 160kbps 32000 Hz stereo (ffmpeg aac, PNS and intensity stereo off)",
+    "files": [
+     "rain-00.m4a",
+     "rain-01.m4a",
+     "rain-02.m4a",
+     "rain-03.m4a",
+     "rain-04.m4a",
+     "rain-05.m4a",
+     "rain-06.m4a",
+     "rain-07.m4a",
+     "rain-08.m4a",
+     "rain-09.m4a"
+    ],
+    "bytes": 8144004,
+    "decoded_chunk_lengths": [
+     1264640
+    ],
+    "chunk_join_lags": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "chunk_join_correlations": [
+     0.9806,
+     0.9823,
+     0.9857,
+     0.9887,
+     0.9766,
+     0.9727,
+     0.9806,
+     0.9796,
+     0.9865,
+     0.9777
+    ],
+    "codec_snr_db": 16.83,
+    "wrap_point": {
+     "rms_dev_db": 0.76,
+     "rms_dev_vs_median_db": 0.64,
+     "band_dev_db": 0.93,
+     "centroid_dev_pct": 8.4,
+     "surrounding_2s_rms_spread_db": 2.5,
+     "sample_step_vs_p99_step": 0.286,
+     "before_after_minute_rms_db": [
+      -24.23,
+      -24.36
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.37,
+     "rms_dev_vs_median_db": 0.15,
+     "band_dev_db": 1.69,
+     "centroid_dev_pct": 9.7,
+     "surrounding_2s_rms_spread_db": 3.12,
+     "sample_step_vs_p99_step": 0.378,
+     "before_after_minute_rms_db": [
+      -24.1,
+      -24.27
+     ]
+    },
+    "chunk_join_error_vs_overall_db_max": 0.98,
+    "chunk_join_step_vs_p99_step_max": 0.941,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -26.59,
+      -21.56
+     ],
+     "2s_rms_p5_p95_spread_db": 3.15,
+     "10s_rms_min_max_db": [
+      -25.03,
+      -22.89
+     ],
+     "10s_rms_p5_p95_spread_db": 1.43,
+     "30s_rms_min_max_db": [
+      -24.55,
+      -23.58
+     ],
+     "30s_rms_p5_p95_spread_db": 0.86,
+     "rms_dbfs": -24.14,
+     "peak_dbfs": -1.75
+    }
+   },
+   "before_v2": {
+    "loop_seconds": 180.0,
+    "seam": {
+     "rms_dev_db": 4.03,
+     "rms_dev_vs_median_db": 3.75,
+     "band_dev_db": 6.16,
+     "centroid_dev_pct": 19.1,
+     "surrounding_2s_rms_spread_db": 11.84,
+     "sample_step_vs_p99_step": 0.056,
+     "before_after_minute_rms_db": [
+      -23.32,
+      -23.57
+     ]
+    },
+    "typical_2s_window_dev_db": {
+     "rms_dev_db_p50_p95": [
+      3.69,
+      7.34
+     ],
+     "rms_dev_vs_median_db_p50_p95": [
+      2.95,
+      7.42
+     ],
+     "band_dev_db_p50_p95": [
+      5.09,
+      10.99
+     ],
+     "centroid_dev_pct_p50_p95": [
+      7.79,
+      55.78
+     ]
+    },
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -32.01,
+      -17.64
+     ],
+     "2s_rms_p5_p95_spread_db": 11.7,
+     "10s_rms_min_max_db": [
+      -29.02,
+      -18.84
+     ],
+     "10s_rms_p5_p95_spread_db": 8.76,
+     "30s_rms_min_max_db": [
+      -27.78,
+      -21.17
+     ],
+     "30s_rms_p5_p95_spread_db": 6.42,
+     "rms_dbfs": -24.04,
+     "peak_dbfs": -6.14
+    }
+   }
+  },
+  "thunder": {
+   "name": "Distant Thunder",
+   "source": "https://archive.org/details/aporee_41798_47650",
+   "source_file": "RainandthunderinThailandTH181001T01.mp3",
+   "source_md5": "b635db599df8ad3f6473ae92b3285b56",
+   "source_seconds": 2100.62,
+   "excluded": [
+    [
+     0.0,
+     735.0,
+     "thunder every 20-40 s, peaks to -0.9 dBFS; engine hum lines at 640-740 s"
+    ],
+    [
+     "3.43-3.51 kHz",
+     "",
+     "intermittent insect chirps (about 6 s in total) notched out, not cut in time"
+    ],
+    [
+     1160.0,
+     2100.6,
+     "louder close strikes (1215-1314 s), frogs and insects from about 1700 s"
+    ]
+   ],
+   "thunder_taming": {
+    "rumble_max_reduction_db": 26.0,
+    "rumble_frames_reduced_pct": 21.5,
+    "crack_band_max_reduction_db": 8.3,
+    "rain_band_max_reduction_db": 1.1,
+    "rain_band_frames_reduced_pct": 0.04
+   },
+   "seam_search_cost_db": 3.361,
+   "source_ranges_used_seconds": [
+    [
+     737.5,
+     1147.5
+    ]
+   ],
+   "target_band_levels_db": [
+    -72.01,
+    -57.89,
+    -45.22,
+    -35.94,
+    -31.7,
+    -30.45,
+    -34.3,
+    -36.11,
+    -39.2,
+    -42.34
+   ],
+   "segment_levelling": [
+    {
+     "broadband_gain_db": [
+      -1.16,
+      3.13
+     ],
+     "balance_correction_db": [
+      -1.88,
+      -1.7
+     ],
+     "max_tilt_correction_db": 8.0
+    }
+   ],
+   "joins_seconds_in_loop": [
+    10.0
+   ],
+   "join_correlations": [
+    0.0019
+   ],
+   "crossfades_seconds": {
+    "seam": 20.0,
+    "internal": 0
+   },
+   "loop_levelling": {
+    "broadband_gain_db": [
+     -0.06,
+     0.14
+    ],
+    "balance_correction_db": [
+     -0.05,
+     0.03
+    ],
+    "max_tilt_correction_db": 4.0
+   },
+   "peak_softening": {
+    "samples_reduced_1db_pct": 0.01,
+    "samples_reduced_pct": 0.044,
+    "max_reduction_db": 5.12
+   },
+   "file_starts_at_loop_seconds": 70.75,
+   "joins_seconds_in_file": [
+    329.25
+   ],
+   "master": {
+    "loop_seconds": 390,
+    "wrap_point": {
+     "rms_dev_db": 0.41,
+     "rms_dev_vs_median_db": 0.05,
+     "band_dev_db": 1.1,
+     "centroid_dev_pct": 0.5,
+     "surrounding_2s_rms_spread_db": 2.42,
+     "sample_step_vs_p99_step": 0.623,
+     "before_after_minute_rms_db": [
+      -23.86,
+      -24.0
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.19,
+     "rms_dev_vs_median_db": 0.23,
+     "band_dev_db": 0.38,
+     "centroid_dev_pct": 3.0,
+     "surrounding_2s_rms_spread_db": 1.13,
+     "sample_step_vs_p99_step": 0.832,
+     "before_after_minute_rms_db": [
+      -24.09,
+      -23.86
+     ]
+    },
+    "joins": [],
+    "typical_2s_window_dev_db": {
+     "rms_dev_db_p50_p95": [
+      0.3,
+      0.87
+     ],
+     "rms_dev_vs_median_db_p50_p95": [
+      0.17,
+      1.01
+     ],
+     "band_dev_db_p50_p95": [
+      1.68,
+      15.31
+     ],
+     "centroid_dev_pct_p50_p95": [
+      2.26,
+      32.25
+     ]
+    },
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -24.65,
+      -20.08
+     ],
+     "2s_rms_p5_p95_spread_db": 1.34,
+     "10s_rms_min_max_db": [
+      -24.48,
+      -22.25
+     ],
+     "10s_rms_p5_p95_spread_db": 1.1,
+     "30s_rms_min_max_db": [
+      -24.4,
+      -23.46
+     ],
+     "30s_rms_p5_p95_spread_db": 0.81,
+     "rms_dbfs": -24.0,
+     "peak_dbfs": -3.0
+    }
+   },
+   "encoded": {
+    "codec": "AAC-LC 160kbps 32000 Hz stereo (ffmpeg aac, PNS and intensity stereo off)",
+    "files": [
+     "thunder-00.m4a",
+     "thunder-01.m4a",
+     "thunder-02.m4a",
+     "thunder-03.m4a",
+     "thunder-04.m4a",
+     "thunder-05.m4a",
+     "thunder-06.m4a",
+     "thunder-07.m4a",
+     "thunder-08.m4a",
+     "thunder-09.m4a"
+    ],
+    "bytes": 7979538,
+    "decoded_chunk_lengths": [
+     1264640
+    ],
+    "chunk_join_lags": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "chunk_join_correlations": [
+     0.9603,
+     0.9411,
+     0.9662,
+     0.9488,
+     0.957,
+     0.9526,
+     0.9391,
+     0.9406,
+     0.9556,
+     0.9591
+    ],
+    "codec_snr_db": 14.62,
+    "wrap_point": {
+     "rms_dev_db": 0.41,
+     "rms_dev_vs_median_db": 0.05,
+     "band_dev_db": 0.81,
+     "centroid_dev_pct": 1.6,
+     "surrounding_2s_rms_spread_db": 2.43,
+     "sample_step_vs_p99_step": 0.638,
+     "before_after_minute_rms_db": [
+      -24.08,
+      -24.23
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.23,
+     "rms_dev_vs_median_db": 0.19,
+     "band_dev_db": 0.36,
+     "centroid_dev_pct": 3.4,
+     "surrounding_2s_rms_spread_db": 1.15,
+     "sample_step_vs_p99_step": 1.078,
+     "before_after_minute_rms_db": [
+      -24.3,
+      -24.07
+     ]
+    },
+    "chunk_join_error_vs_overall_db_max": 1.58,
+    "chunk_join_step_vs_p99_step_max": 0.96,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -24.88,
+      -20.2
+     ],
+     "2s_rms_p5_p95_spread_db": 1.32,
+     "10s_rms_min_max_db": [
+      -24.71,
+      -22.42
+     ],
+     "10s_rms_p5_p95_spread_db": 1.09,
+     "30s_rms_min_max_db": [
+      -24.63,
+      -23.67
+     ],
+     "30s_rms_p5_p95_spread_db": 0.8,
+     "rms_dbfs": -24.22,
+     "peak_dbfs": -2.99
+    }
+   },
+   "before_v2": {
+    "loop_seconds": 180.0,
+    "seam": {
+     "rms_dev_db": 6.91,
+     "rms_dev_vs_median_db": 4.55,
+     "band_dev_db": 10.48,
+     "centroid_dev_pct": 67.1,
+     "surrounding_2s_rms_spread_db": 17.8,
+     "sample_step_vs_p99_step": 0.494,
+     "before_after_minute_rms_db": [
+      -22.12,
+      -23.37
+     ]
+    },
+    "typical_2s_window_dev_db": {
+     "rms_dev_db_p50_p95": [
+      6.47,
+      9.41
+     ],
+     "rms_dev_vs_median_db_p50_p95": [
+      2.37,
+      13.36
+     ],
+     "band_dev_db_p50_p95": [
+      8.95,
+      22.1
+     ],
+     "centroid_dev_pct_p50_p95": [
+      44.88,
+      88.61
+     ]
+    },
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -33.64,
+      -14.34
+     ],
+     "2s_rms_p5_p95_spread_db": 17.25,
+     "10s_rms_min_max_db": [
+      -33.49,
+      -16.83
+     ],
+     "10s_rms_p5_p95_spread_db": 15.22,
+     "30s_rms_min_max_db": [
+      -32.47,
+      -19.32
+     ],
+     "30s_rms_p5_p95_spread_db": 12.31,
+     "rms_dbfs": -23.9,
+     "peak_dbfs": -8.73
+    }
+   }
+  }
+ },
+ "version": "v3",
+ "sample_rate": 32000,
+ "loop_seconds": 390,
+ "chunks": 10,
+ "pad_seconds": 0.25,
+ "target_rms_dbfs": -24.0,
+ "peak_ceiling_dbfs": -3.0,
+ "pipeline": "tools/master_audio.py"
+}
