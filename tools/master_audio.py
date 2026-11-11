@@ -38,9 +38,7 @@ import argparse
 import hashlib
 import json
 import os
-import shutil
 import subprocess
-import sys
 import tempfile
 
 import numpy as np
@@ -80,9 +78,10 @@ SOUNDS = {
         "seam_fade": 20.0,
         "highpass": 30.0,
         # Steady 120.1 Hz mains hum (+28 dB over the noise floor) and harmonics.
-        "notches": [120.1, 239.75, 359.9, 480.0],
+        "notches": [(120.1, 1.6), (239.75, 1.6), (359.9, 1.6), (480.0, 1.6)],
         "dethump": {"fc": 250.0, "over_db": 8.0},
         "thunder": None,
+        "drops": None,
         "level": {"percentile": 50, "window": 15.0, "sigma": 6.0},
         "excluded": [
             [0.0, 0.5, "recorder start"],
@@ -104,9 +103,10 @@ SOUNDS = {
         "notches": [],
         "dethump": {"fc": 200.0, "over_db": 9.0},
         "thunder": None,
+        "drops": {"drop_over": 8.0, "cluster_over": 2.0},
         "level": {"percentile": 50, "window": 15.0, "sigma": 6.0},
         "excluded": [
-            [0.0, 1002.0, "frequent cars on the wet street (14 passes of +10 to +20 dB, 10-27 s each)"],
+            [0.0, 1002.0, "frequent cars on the wet street (12 passes of +10 to +20 dB, 10-27 s each)"],
             [1472.0, 1523.4, "car passes from 1475 s and the recording end"],
         ],
     },
@@ -120,12 +120,15 @@ SOUNDS = {
         "search": (735.0, 1160.0),
         "seam_fade": 20.0,
         "highpass": 25.0,
-        "notches": [],
+        # Intermittent insect chirps at 3.45-3.49 kHz (up to +20 dB over the rain).
+        "notches": [(3472.0, 90.0)],
         "dethump": None,
-        "thunder": {"fc": 300.0},
-        "level": {"percentile": 30, "window": 40.0, "sigma": 8.0},
+        "thunder": {"f1": 300.0, "f2": 1500.0},
+        "drops": None,
+        "level": {"percentile": 25, "window": 60.0, "sigma": 8.0},
         "excluded": [
             [0.0, 735.0, "thunder every 20-40 s, peaks to -0.9 dBFS; engine hum lines at 640-740 s"],
+            ["3.43-3.51 kHz", "", "intermittent insect chirps (about 6 s in total) notched out, not cut in time"],
             [1160.0, 2100.6, "louder close strikes (1215-1314 s), frogs and insects from about 1700 s"],
         ],
     },
@@ -203,9 +206,10 @@ def highpass(x, fc):
     return signal.sosfiltfilt(sos, x, axis=0).astype(np.float32)
 
 
-def notch(x, freqs, width=1.6):
+def notch(x, notches):
+    """Zero-phase notches; each entry is (centre Hz, -3 dB width Hz)."""
     y = x.astype(np.float64)
-    for f in freqs:
+    for f, width in notches:
         b, a = signal.iirnotch(f, f / width, fs=SR)
         y = signal.filtfilt(b, a, y, axis=0)
     return y.astype(np.float32)
@@ -223,10 +227,10 @@ def dethump(x, fc, over_db, hop=80):
     30 ms look-ahead, ~120 ms smooth release."""
     low, high = split(x, fc)
     env = db(ndimage.uniform_filter1d(frame_power(low, hop), int(0.02 * SR / hop)))
-    ref = ndimage.median_filter(env, size=int(8 * SR / hop), mode="nearest")
+    ref = ndimage.median_filter(env, size=int(8 * SR / hop), mode="reflect")
     g = -np.maximum(0, env - (ref + over_db))
-    g = ndimage.minimum_filter1d(g, int(0.06 * SR / hop), mode="nearest")
-    g = ndimage.gaussian_filter1d(g, 0.03 * SR / hop, mode="nearest")
+    g = ndimage.minimum_filter1d(g, int(0.06 * SR / hop), mode="reflect")
+    g = ndimage.gaussian_filter1d(g, 0.03 * SR / hop, mode="reflect")
     gs = gains_to_samples(g, hop, len(x))[:, None]
     stats = {"frames_reduced_pct": round(float((g < -1).mean() * 100), 2),
              "max_reduction_db": round(float(-g.min()), 1)}
@@ -240,40 +244,92 @@ def slew_up(level_db, max_rise_db_per_frame):
     return out
 
 
-def tame_thunder(x, fc, hop=800):
-    """Two-band, look-ahead thunder taming referenced to the rain bed.
+def three_way(x, f1, f2):
+    """Zero-phase three-band split; low + mid + high == x exactly."""
+    low, rest = split(x, f1)
+    mid, high = split(rest, f2)
+    return low, mid, high
 
-    The bed is the running 20th percentile of the >fc band over 60 s.
-    Low band (the rumble): 4:1 above bed-4 dB, reduction starts up to ~1 s
-    before an onset, and the output may rise at most 15 dB/s, so rolls
-    swell in instead of cracking. High band (crack brightness): 3:1 above
-    bed+2 dB, 20 dB/s. Everything is zero-phase and smoothed (sigma 0.5 s),
-    so the rain itself does not pump.
-    """
-    low, high = split(x, fc)
-    fps = SR / hop
-    pl = frame_power(low, hop)
-    ph = frame_power(high, hop)
-    lev_l = db(ndimage.uniform_filter1d(pl, int(0.4 * fps)))
-    lev_h = db(ndimage.uniform_filter1d(ph, int(0.2 * fps)))
-    bed = ndimage.percentile_filter(db(ndimage.uniform_filter1d(ph, int(0.4 * fps))), 20,
-                                    size=int(60 * fps), mode="nearest")
-    bed = ndimage.gaussian_filter1d(bed, 5 * fps, mode="nearest")
 
-    def band_gain(lev, thr, ratio, rise_db_s, lookahead_s, sigma_s):
-        g = -(1 - 1 / ratio) * np.maximum(0, lev - thr)
+def compress(lev, thr, ratio, fps, rise_db_s=None, lookahead_s=0.0, sigma_s=0.0):
+    """Downward gain (dB) for a level curve: ratio above thr, optional limit
+    on how fast the output may rise, centred look-ahead and smoothing."""
+    g = -(1 - 1 / ratio) * np.maximum(0, lev - thr)
+    if rise_db_s:
         out = slew_up(lev + g, rise_db_s / fps)
         g = np.minimum(g, out - lev)
-        g = ndimage.minimum_filter1d(g, int(lookahead_s * fps) * 2 + 1, mode="nearest")
-        return ndimage.gaussian_filter1d(g, sigma_s * fps, mode="nearest")
+    if lookahead_s:
+        g = ndimage.minimum_filter1d(g, 2 * int(lookahead_s * fps) + 1, mode="reflect")
+    if sigma_s:
+        g = ndimage.gaussian_filter1d(g, sigma_s * fps, mode="reflect")
+    return g
 
-    gl = band_gain(lev_l, bed - 4.0, 4.0, 15.0, 1.0, 0.5)
-    gh = band_gain(lev_h, bed + 2.0, 3.0, 20.0, 0.5, 0.25)
-    y = low * gains_to_samples(gl, hop, len(x))[:, None] + high * gains_to_samples(gh, hop, len(x))[:, None]
-    stats = {"low_band_max_reduction_db": round(float(-gl.min()), 1),
-             "high_band_max_reduction_db": round(float(-gh.min()), 1),
-             "low_band_frames_reduced_pct": round(float((gl < -1).mean() * 100), 1)}
+
+def smoothed_level(band, hop, seconds):
+    fps = SR / hop
+    return db(ndimage.uniform_filter1d(frame_power(band, hop), max(1, int(seconds * fps))))
+
+
+def tame_thunder(x, f1=300.0, f2=1500.0, hop=800):
+    """Three-band, look-ahead thunder taming referenced to the rain bed.
+
+    Rumble (<f1): 4:1 above (rain bed - 4 dB); the reduction starts up to
+    1 s before an onset and the output may rise at most 15 dB/s, so rolls
+    swell in instead of cracking. Crack body (f1-f2): 3:1 above its own bed
+    + 3 dB, 20 dB/s. Rain band (>f2): only 2:1 above bed + 4 dB, so the
+    rain itself is not ducked when thunder rolls. The bed of each band is
+    its running 20th percentile over 60 s. All zero-phase and smoothed.
+    """
+    low, mid, high = three_way(x, f1, f2)
+    fps = SR / hop
+
+    def bed(band):
+        b = ndimage.percentile_filter(smoothed_level(band, hop, 0.4), 20, size=int(60 * fps), mode="reflect")
+        return ndimage.gaussian_filter1d(b, 5 * fps, mode="reflect")
+
+    bed_m, bed_h = bed(mid), bed(high)
+    rain_bed = db(10 ** (bed_m / 10) + 10 ** (bed_h / 10))
+    gl = compress(smoothed_level(low, hop, 0.4), rain_bed - 4.0, 4.0, fps, 15.0, 1.0, 0.5)
+    gm = compress(smoothed_level(mid, hop, 0.2), bed_m + 3.0, 3.0, fps, 20.0, 0.5, 0.25)
+    gh = compress(smoothed_level(high, hop, 0.1), bed_h + 4.0, 2.0, fps, None, 0.2, 0.1)
+    n = len(x)
+    y = (low * gains_to_samples(gl, hop, n)[:, None] + mid * gains_to_samples(gm, hop, n)[:, None]
+         + high * gains_to_samples(gh, hop, n)[:, None])
+    stats = {"rumble_max_reduction_db": round(float(-gl.min()), 1),
+             "rumble_frames_reduced_pct": round(float((gl < -1).mean() * 100), 1),
+             "crack_band_max_reduction_db": round(float(-gm.min()), 1),
+             "rain_band_max_reduction_db": round(float(-gh.min()), 1),
+             "rain_band_frames_reduced_pct": round(float((gh < -1).mean() * 100), 2)}
     return y.astype(np.float32), stats
+
+
+def soften_drops(x, f1=150.0, f2=4500.0, drop_over=8.0, cluster_over=1.5):
+    """Even out the 'plop' drips close to the open window (Summer Rain).
+
+    Only the 150-4500 Hz band, where the drips live, is touched; the hiss
+    above and the rumble below are left alone. Stage 1 (2.5 ms frames): a
+    single drop more than drop_over dB above the running 4 s median is
+    reduced 3:1 with a 10 ms look-ahead. Stage 2 (25 ms frames): a cluster of
+    drops whose 0.3 s level is more than cluster_over dB above the running
+    8 s median is reduced 3:1 with 150 ms look-ahead and soft edges.
+    """
+    low, mid, high = three_way(x, f1, f2)
+    n = len(x)
+    fast = 80
+    lev = smoothed_level(mid, fast, 0.01)
+    ref = ndimage.median_filter(lev, size=int(4 * SR / fast), mode="reflect")
+    g1 = compress(lev, ref + drop_over, 3.0, SR / fast, None, 0.01, 0.005)
+    mid = mid * gains_to_samples(g1, fast, n)[:, None]
+    slow = 800
+    lev2 = smoothed_level(mid, slow, 0.3)
+    ref2 = ndimage.median_filter(lev2, size=int(8 * SR / slow), mode="reflect")
+    g2 = compress(lev2, ref2 + cluster_over, 3.0, SR / slow, None, 0.15, 0.12)
+    mid = mid * gains_to_samples(g2, slow, n)[:, None]
+    stats = {"single_drop_max_reduction_db": round(float(-g1.min()), 1),
+             "single_drop_frames_reduced_pct": round(float((g1 < -1).mean() * 100), 2),
+             "cluster_max_reduction_db": round(float(-g2.min()), 1),
+             "cluster_frames_reduced_pct": round(float((g2 < -1).mean() * 100), 1)}
+    return (low + mid + high).astype(np.float32), stats
 
 
 # --------------------------------------------------------------------------
@@ -326,7 +382,7 @@ def level(x, target, cfg, circular=False, max_gain=12.0, max_tilt=8.0, max_bal=4
     n = len(x)
     margin = 60 * SR if circular else 0
     xx = tile(x, margin) if circular else x
-    mode = "nearest"
+    mode = "nearest" if circular else "reflect"
     lev, chan = band_levels(xx)
     s = smooth_levels(lev, cfg, mode)
     sc = smooth_levels(chan, cfg, mode)
@@ -358,7 +414,7 @@ def level(x, target, cfg, circular=False, max_gain=12.0, max_tilt=8.0, max_bal=4
 
 
 def target_spectrum(segments, cfg):
-    levs = [smooth_levels(band_levels(s)[0], cfg, "nearest") for s in segments]
+    levs = [smooth_levels(band_levels(s)[0], cfg, "reflect") for s in segments]
     allv = np.concatenate(levs, axis=1)
     return np.median(allv, axis=1)
 
@@ -410,7 +466,7 @@ def choose_seam(x, offset, search, seam_fade, cfg, avoid_low=False):
     hi = int((search[1] - offset) * SR) - span
     region = x[lo:hi + span]
     lev, _ = band_levels(region)
-    s = smooth_levels(lev, {"percentile": 50, "window": 5.0, "sigma": 2.0}, "nearest")
+    s = smooth_levels(lev, {"percentile": 50, "window": 5.0, "sigma": 2.0}, "reflect")
     xs = int(seam_fade * SR) // HOP
     best = None
     for st in range(0, (hi - lo) // HOP + 1, int(0.5 * SR / HOP)):
@@ -473,7 +529,7 @@ def window_stats(x, win):
     return rms, bands, cen
 
 
-def seam_metrics(loop, pos, period=None, around=60.0, win_s=2.0):
+def seam_metrics(loop, pos, around=60.0, win_s=2.0):
     """Compare the 2 s windows touching `pos` (circular) with the surrounding
     `around` seconds on each side. Also report how unusual that is: the same
     statistic for every other 2 s window in the loop."""
@@ -486,8 +542,11 @@ def seam_metrics(loop, pos, period=None, around=60.0, win_s=2.0):
     rms, bands, cen = window_stats(z, win)
     cz = loop[(np.arange(-win // 2, win // 2) + pos) % n]
     crms, cbands, ccen = window_stats(cz, win)
-    ref_rms = db(np.mean(10 ** (np.delete(rms, [k - 1, k]) / 10)))
-    ref_bands = db(np.mean(10 ** (np.delete(bands, [k - 1, k], axis=0) / 10), axis=0))
+    others = np.delete(rms, [k - 1, k])
+    ref_rms = db(np.mean(10 ** (others / 10)))
+    med_rms = float(np.median(others))
+    # Median references: robust to the odd thunder roll or drip cluster nearby.
+    ref_bands = np.median(np.delete(bands, [k - 1, k], axis=0), axis=0)
     ref_cen = float(np.median(np.delete(cen, [k - 1, k])))
     seam_rms = np.array([rms[k - 1], crms[0], rms[k]])
     seam_bands = np.stack([bands[k - 1], cbands[0], bands[k]])
@@ -496,6 +555,7 @@ def seam_metrics(loop, pos, period=None, around=60.0, win_s=2.0):
     step = np.abs(loop[pos % n].astype(np.float64) - loop[(pos - 1) % n]).max()
     return {
         "rms_dev_db": round(float(np.abs(seam_rms - ref_rms).max()), 2),
+        "rms_dev_vs_median_db": round(float(np.abs(seam_rms - med_rms).max()), 2),
         "band_dev_db": round(float(np.abs(seam_bands - ref_bands).max()), 2),
         "centroid_dev_pct": round(float(np.abs(seam_cen / ref_cen - 1).max() * 100), 1),
         "surrounding_2s_rms_spread_db": round(float(np.percentile(rms, 95) - np.percentile(rms, 5)), 2),
@@ -506,19 +566,46 @@ def seam_metrics(loop, pos, period=None, around=60.0, win_s=2.0):
 
 
 def typical_window_dev(loop, win_s=2.0, around=60.0):
-    """95th percentile of |2 s window RMS - mean of the surrounding windows|
-    over the whole (circular) loop: the natural drop-to-drop variation that
-    a seam window is judged against."""
+    """The same seam statistics for EVERY 2 s window of the (circular) loop,
+    compared with its own surrounding windows: the natural drop-to-drop
+    variation that a seam is judged against. Returns 50th/95th percentiles."""
     win = int(win_s * SR)
-    rms = window_stats(loop, win)[0]
+    rms, bands, cen = window_stats(loop, win)
     n = len(rms)
     k = min(int(around / win_s), (n - 1) // 2)
     p = 10 ** (rms / 10)
-    devs = []
+    dev, devm, bdev, cdev = [], [], [], []
     for i in range(n):
-        ref = np.concatenate([np.roll(p, -(i - k))[:k], np.roll(p, -(i + 1))[:k]])
-        devs.append(abs(rms[i] - db(ref.mean())))
-    return round(float(np.percentile(devs, 95)), 2)
+        idx = np.r_[i - k:i, i + 1:i + k + 1] % n
+        dev.append(abs(rms[i] - db(p[idx].mean())))
+        devm.append(abs(rms[i] - np.median(rms[idx])))
+        bdev.append(np.abs(bands[i] - np.median(bands[idx], axis=0)).max())
+        cdev.append(abs(cen[i] / np.median(cen[idx]) - 1) * 100)
+    pct = lambda v: [round(float(np.percentile(v, 50)), 2), round(float(np.percentile(v, 95)), 2)]
+    return {"rms_dev_db_p50_p95": pct(dev), "rms_dev_vs_median_db_p50_p95": pct(devm),
+            "band_dev_db_p50_p95": pct(bdev), "centroid_dev_pct_p50_p95": pct(cdev)}
+
+
+def calm_rotation(loop, fades, avoid_low=False):
+    """Pick where the file starts: the wrap point is sample-continuous, so it
+    can sit anywhere. Choose a moment >= 15 s from every crossfade whose 2 s
+    neighbourhood is closest to the local median level (and, for thunder,
+    with no rumble within 15 s). Also where an iPhone restarts the file."""
+    win = int(0.5 * SR)
+    rms, bands, _ = window_stats(loop, win)
+    n = len(rms)
+    med = ndimage.median_filter(rms, size=121, mode="wrap")
+    local = ndimage.uniform_filter1d(10 ** (rms / 10), 4, mode="wrap")
+    cost = np.abs(db(local) - med)
+    if avoid_low:
+        low = bands[:, 0]
+        cost += np.maximum(0, ndimage.maximum_filter1d(low, 61, mode="wrap") - np.median(low) - 6)
+    pos = np.arange(n) * win
+    for c0, c1 in fades:
+        d = np.minimum(np.abs(pos - (c0 + c1) // 2), L - np.abs(pos - (c0 + c1) // 2))
+        cost[d < (c1 - c0) // 2 + 15 * SR] = np.inf
+    i = int(np.argmin(cost))
+    return (i * win + win // 2) % L
 
 
 def loudness_range(loop):
@@ -598,10 +685,6 @@ def reassemble(decoded):
     return out, lags, corrs
 
 
-def decode_chunk(path):
-    return decode(path)
-
-
 # --------------------------------------------------------------------------
 # Old (v2) loops, for before/after numbers
 # --------------------------------------------------------------------------
@@ -675,7 +758,7 @@ def process(sound_id, cfg, src_path, out_dir, args):
         spans = cfg["segments"]
     else:
         spans = [cfg["search"]]
-    ctx = 10.0
+    ctx = 30.0
     first, last = max(0.0, spans[0][0] - ctx), min(len(x) / SR, spans[-1][1] + ctx)
     work = x[int(first * SR):int(last * SR)]
     del x
@@ -687,6 +770,8 @@ def process(sound_id, cfg, src_path, out_dir, args):
         work, report["dethump"] = dethump(work, **cfg["dethump"])
     if cfg["thunder"]:
         work, report["thunder_taming"] = tame_thunder(work, **cfg["thunder"])
+    if cfg["drops"]:
+        work, report["drop_softening"] = soften_drops(work, **cfg["drops"])
 
     if "segments" in cfg:
         segs = [work[int((a - first) * SR):int((b - first) * SR)] for a, b in cfg["segments"]]
@@ -731,6 +816,14 @@ def process(sound_id, cfg, src_path, out_dir, args):
     loop *= 10 ** ((TARGET_RMS_DBFS - rms_db(loop)) / 20)
     loop = np.clip(loop, -1, 1).astype(np.float32)
 
+    xs, xj = int(cfg["seam_fade"] * SR), int(join_fade * SR)
+    fades = [(j - xj // 2, j + xj // 2) for j in joins[:-1]] + [(0, xs)]
+    rot = calm_rotation(loop, fades, avoid_low=bool(cfg["thunder"]))
+    loop = np.roll(loop, -rot, axis=0)
+    joins = [int((j - rot) % L) for j in joins]
+    report["file_starts_at_loop_seconds"] = round(rot / SR, 2)
+    report["joins_seconds_in_file"] = [round(j / SR, 2) for j in joins]
+
     report["master"] = {
         "loop_seconds": LOOP_SECONDS,
         "wrap_point": seam_metrics(loop, 0),
@@ -741,12 +834,14 @@ def process(sound_id, cfg, src_path, out_dir, args):
     }
     if args.plots:
         plot(sound_id, loop, joins, args.plots)
+    if args.masters:
+        os.makedirs(args.masters, exist_ok=True)
+        loop.astype(np.float32).tofile(os.path.join(args.masters, f"{sound_id}.f32"))
     if args.no_encode:
         return report, None
 
     files = encode_chunks(loop, sound_id, out_dir)
-    with tempfile.TemporaryDirectory() as tmp:
-        decoded = [decode_chunk(os.path.join(out_dir, f)) for f in files]
+    decoded = [decode(os.path.join(out_dir, f)) for f in files]
     lengths = sorted({len(d) for d in decoded})
     re, lags, corrs = reassemble(decoded)
     err = re - loop
@@ -760,8 +855,11 @@ def process(sound_id, cfg, src_path, out_dir, args):
         "codec_snr_db": round(float(db((loop.astype(np.float64) ** 2).mean()) - db((err.astype(np.float64) ** 2).mean())), 2),
         "wrap_point": seam_metrics(re, 0),
         "seam": seam_metrics(re, joins[-1]),
-        "chunk_joins_worst": max((seam_metrics(re, k * C) for k in range(1, CHUNKS)),
-                                 key=lambda m: m["rms_dev_db"]),
+        # Codec error in the 100 ms around each chunk join relative to the
+        # codec error everywhere: ~0 dB means the joins are not audible as joins.
+        "chunk_join_error_vs_overall_db_max": round(max(
+            float(db((err[(np.arange(-1600, 1600) + k * C) % L].astype(np.float64) ** 2).mean())
+                  - db((err.astype(np.float64) ** 2).mean())) for k in range(CHUNKS)), 2),
         "chunk_join_step_vs_p99_step_max": round(max(seam_metrics(re, k * C, around=4)["sample_step_vs_p99_step"]
                                                      for k in range(CHUNKS)), 3),
         "loudness": loudness_range(re),
@@ -777,6 +875,7 @@ def main():
     ap.add_argument("--only", default="")
     ap.add_argument("--plots", default="")
     ap.add_argument("--no-encode", action="store_true")
+    ap.add_argument("--masters", default="", help="also write each master loop as raw float32 stereo here")
     args = ap.parse_args()
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     out_dir = os.path.join(repo, "audio", VERSION)

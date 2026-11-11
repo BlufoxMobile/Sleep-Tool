@@ -1,31 +1,63 @@
 # Night Sounds · Your sanctuary
 
-A static, privacy-minded ambient mixer with a midnight-green interface, original
-lake illustration, scene presets, twelve natural recordings, saved mixes, a dim
+A static, privacy-minded rain mixer with a midnight-green interface, original
+lake illustration, scene presets, three rain recordings, saved mixes, a dim
 view, and an optional breathing guide. No account or build step is required.
 
 ## Audio
 
-Ten recordings now use roughly three-minute excerpts from their original
-public-domain field recordings. Tent rain and campfire retain the original
-43-second assets. All sounds play at their natural pitch and pace: no detuned
-duplicate voices and no randomly chopped animal calls. Extended recordings are
-stereo AAC at 192 kbps / 32 kHz, level-matched to −24 dBFS RMS with gentle transient
-softening. The 32 kHz playback rate bounds mobile memory; this is not a lossless
-or full-bandwidth archival library. Source details are in [CREDITS.md](CREDITS.md).
+Three sounds: **Rain on Tent**, **Summer Rain** and **Distant Thunder**. Each is
+one seamless **6 minute 30 second** loop built offline from the original
+public-domain field recording by `tools/master_audio.py`, so nothing repeats
+sooner than 6.5 minutes. That holds for every mix too, because all three loops
+have exactly the same length.
 
-Up to four selected sounds load on demand. Each is crossfaded back into itself
-with a correlation-aware equal-power blend (8 seconds, 2.5 seconds for tent rain).
-This avoids both a hard seam and a correlated-signal volume swell. The mixer
-renders a three-minute stereo WAV in memory, checks peak headroom, then loops it
-through one HTML audio element. The recordings and the rendered mix still
-repeat; crossfades reduce detectable joins but cannot guarantee imperceptible
-repetition for every recording or gapless media-element looping on every browser.
+How the loops are made (details and numbers in `audio/v3/processing-report.json`):
+
+- Only clean stretches of each recording are used. Passing cars, an idling
+  engine, handling noise and the loudest close thunder are left out, a steady
+  120 Hz mains hum (tent) and faint insect chirps (thunder) are notched out, and
+  low thumps are limited.
+- A slow multiband leveller (running median band levels, about 15 to 60 second
+  windows, smoothed, so it never pumps) keeps loudness, tone and left/right
+  balance the same from minute to minute. Thunder rolls are tamed with
+  look-ahead compression so they swell in gently, never crack. In Summer Rain,
+  the loudest drips near the window are softened.
+- Segments are joined, and the loop is closed, with 20 second (11.5 second for the tent's
+  internal join) correlation-aware equal-power crossfades between stretches
+  that already match in level and tone. The loop is then levelled once more in
+  circular mode, so even the gain curve wraps around.
+- Measured at the seam: 2 s RMS within 0.5 dB of the surrounding minute, band
+  levels within 1.7 dB and spectral centroid within 11%, no larger than the
+  ordinary drop-to-drop variation. 30 s loudness stays within 0.9 dB over the
+  whole loop.
+
+Each loop ships as ten 39 second AAC-LC chunks (160 kbps, 32 kHz stereo,
+about 8 MB per sound, 24 MB in all) in a versioned folder (`audio/v3/`) so
+phones never replay a stale cached file. Every chunk carries 0.25 s of its
+neighbours on each side. When you press Play, the app decodes one chunk at a
+time, checks its alignment against the previous chunk by cross-correlation
+(so AAC encoder priming and padding can never misalign a join), crossfades
+the 64 ms of shared audio, mixes the selected sounds at their volumes and writes
+16-bit PCM straight into a 390-second WAV (about 50 MB). It then loops that one
+WAV through a single HTML audio element, which iOS keeps playing with the
+screen locked. Per-sound volume, overall volume and the sleep-timer fade are
+baked into the PCM because iOS ignores programmatic element volume. The page
+never holds the whole loop as Float32: peak audio memory is roughly the WAV plus
+one decoded chunk per sound (about 10 MB each), and about 50 MB more while Apply
+changes replaces a playing mix.
+
+To rebuild the audio: `python3 tools/master_audio.py` (downloads the originals
+from the Internet Archive, verifies their MD5, needs ffmpeg with soxr, numpy
+and scipy; `--source id=path` uses local copies, `--plots DIR` draws level
+plots).
 
 Play, pause, and Stop control the same player. Stop also cancels any unfinished
 render so audio cannot unexpectedly resume. Changes while playing are staged
-until **Apply changes**. Favorite mixes and current settings stay in localStorage.
-Audio is fetched from this site; fonts use Google Fonts. There are no analytics.
+until **Apply changes**. Favorite mixes and current settings stay in localStorage;
+saved mixes from older versions that name removed sounds are ignored (an empty
+mix falls back to tent rain). Audio is fetched from this site; fonts use Google
+Fonts. There are no analytics.
 
 ## Sleep timers and phones
 
@@ -54,15 +86,22 @@ GitHub Pages can continue serving the repository root. No deployment framework
 or external audio service is needed.
 
 Files: `index.html` (markup), `styles.css` (design), `app.js` (controls and playback),
-`audio-core.js` (testable sample operations), `assets/` (original SVG artwork), and
-`audio/` (bundled recordings).
+`audio-core.js` (testable chunk mixer, WAV and fade operations), `assets/` (original
+SVG artwork), `audio/v3/` (loop chunks, `manifest.json`, `processing-report.json`)
+and `tools/master_audio.py` (the mastering pipeline).
 
 ## Validation
 
-- Automated checks: seam continuity, correlated-crossfade level, short/mono/stereo
-  input, silence, WAV encoding and peak headroom.
-- Desktop browser: selected scene renders to a 180-second looping media file;
-  play, pause, resume, Stop, saved settings and breathing dialog verified.
-- Responsive layout inspected at 390px; no horizontal page overflow.
-- Actual overnight playback and physical iOS/Android screen-lock behavior remain
-  device acceptance tests, not completed claims.
+- `node --test tests/*.test.cjs`: chunk reassembly (sample-exact, including the
+  wrap-around, untrimmed decoder priming and a mis-offset chunk), mixing gains
+  and peak headroom, WAV encoding, the timer fade, and the shipped loops' seam
+  and loudness measurements. If ffmpeg is installed, the real chunk files are
+  decoded and run through the app's own mixer and the seams are measured again.
+- Headless Chrome: every scene renders a 390-second, 32 kHz stereo WAV (in about
+  2 s on a desktop) that loops with no level step at the wrap point or at any
+  sound's seam. Play, pause, resume, Apply changes, Stop, the timer fade, saved
+  mixes (including old saves naming removed sounds) and Media Session were
+  checked, with no console errors. Layout was checked at 390 px and 1280 px.
+- Actual overnight playback, whether iOS restarts a looping media element
+  without a gap, and physical iOS/Android screen-lock behavior remain device
+  acceptance tests, not completed claims.
