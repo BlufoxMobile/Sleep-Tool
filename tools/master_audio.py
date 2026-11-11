@@ -54,7 +54,7 @@ PAD_SECONDS = 0.25            # neighbouring audio carried on each side of a chu
 JOIN_FADE = 2048              # app-side crossfade between chunk encodings (samples)
 BITRATE = "160k"
 TARGET_RMS_DBFS = -24.0
-PEAK_CEILING_DBFS = -8.0      # transient softening ceiling (crest <= 16 dB)
+PEAK_CEILING_DBFS = -3.0      # transient softening ceiling (crest <= 21 dB)
 
 L = LOOP_SECONDS * SR
 C = L // CHUNKS
@@ -81,7 +81,7 @@ SOUNDS = {
         "highpass": 30.0,
         # Steady 120.1 Hz mains hum (+28 dB over the noise floor) and harmonics.
         "notches": [120.1, 239.75, 359.9, 480.0],
-        "dethump": {"fc": 250.0, "over_db": 5.0},
+        "dethump": {"fc": 250.0, "over_db": 8.0},
         "thunder": None,
         "level": {"percentile": 50, "window": 15.0, "sigma": 6.0},
         "excluded": [
@@ -444,7 +444,8 @@ def soften_peaks(x, ceiling_db, circular=True):
     y = xx * g[:, None].astype(np.float32)
     if circular:
         y, g = y[SR:SR + len(x)], g[SR:SR + len(x)]
-    stats = {"samples_reduced_pct": round(float((g < 0.999).mean() * 100), 3),
+    stats = {"samples_reduced_1db_pct": round(float((g < 0.891).mean() * 100), 3),
+             "samples_reduced_pct": round(float((g < 0.999).mean() * 100), 3),
              "max_reduction_db": round(float(-20 * np.log10(g.min())), 2)}
     return y.astype(np.float32), stats
 

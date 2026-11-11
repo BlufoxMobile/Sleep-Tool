@@ -248,6 +248,12 @@
   .bx-pad { margin-top: 18px; width: min(60vw, 220px, 30vh); }
   .bx-choices { margin-top: 20px; }
 }
+@media (max-height: 600px) {
+  #bx-calm .bx-orb { width: min(56vw, 29vh); }
+  .bx-words { margin-top: 12px; }
+  .bx-progress { margin-top: 4px; }
+  #bx-calm .bx-safety { margin-top: 4px; font-size: 11px; }
+}
 @media (max-width: 360px) {
   .bx-now-text span { display: none; }
   .bx-sound-toggle span { display: none; }

@@ -24,8 +24,8 @@
     ]
    ],
    "dethump": {
-    "frames_reduced_pct": 6.46,
-    "max_reduction_db": 21.5
+    "frames_reduced_pct": 1.45,
+    "max_reduction_db": 18.6
    },
    "source_ranges_used_seconds": [
     [
@@ -38,9 +38,9 @@
     ]
    ],
    "target_band_levels_db": [
-    -62.53,
-    -56.99,
-    -52.34,
+    -62.43,
+    -56.9,
+    -52.27,
     -47.59,
     -44.56,
     -44.64,
@@ -57,7 +57,7 @@
      ],
      "balance_correction_db": [
       2.78,
-      3.59
+      3.58
      ],
      "max_tilt_correction_db": 8.0
     },
@@ -70,7 +70,7 @@
       3.26,
       3.87
      ],
-     "max_tilt_correction_db": 2.88
+     "max_tilt_correction_db": 2.96
     }
    ],
    "joins_seconds_in_loop": [
@@ -92,70 +92,71 @@
     ],
     "balance_correction_db": [
      -0.04,
-     0.25
+     0.26
     ],
-    "max_tilt_correction_db": 1.81
+    "max_tilt_correction_db": 1.78
    },
    "peak_softening": {
-    "samples_reduced_pct": 14.944,
-    "max_reduction_db": 15.81
+    "samples_reduced_1db_pct": 0.744,
+    "samples_reduced_pct": 1.969,
+    "max_reduction_db": 10.8
    },
    "master": {
     "loop_seconds": 390,
     "wrap_point": {
-     "rms_dev_db": 0.32,
-     "band_dev_db": 0.56,
-     "centroid_dev_pct": 1.3,
-     "surrounding_2s_rms_spread_db": 0.86,
-     "sample_step_vs_p99_step": 0.268,
+     "rms_dev_db": 0.11,
+     "band_dev_db": 0.39,
+     "centroid_dev_pct": 2.0,
+     "surrounding_2s_rms_spread_db": 0.73,
+     "sample_step_vs_p99_step": 0.258,
      "before_after_minute_rms_db": [
-      -23.9,
-      -24.12
+      -24.08,
+      -23.97
      ]
     },
     "seam": {
-     "rms_dev_db": 0.22,
-     "band_dev_db": 0.38,
-     "centroid_dev_pct": 3.6,
-     "surrounding_2s_rms_spread_db": 0.86,
-     "sample_step_vs_p99_step": 0.164,
+     "rms_dev_db": 0.28,
+     "band_dev_db": 0.62,
+     "centroid_dev_pct": 4.7,
+     "surrounding_2s_rms_spread_db": 0.75,
+     "sample_step_vs_p99_step": 0.158,
      "before_after_minute_rms_db": [
-      -23.84,
-      -24.2
+      -24.03,
+      -23.96
      ]
     },
     "joins": [
      {
-      "rms_dev_db": 0.55,
-      "band_dev_db": 0.82,
-      "centroid_dev_pct": 1.5,
-      "surrounding_2s_rms_spread_db": 0.75,
-      "sample_step_vs_p99_step": 1.377,
+      "rms_dev_db": 0.37,
+      "band_dev_db": 0.67,
+      "centroid_dev_pct": 1.9,
+      "surrounding_2s_rms_spread_db": 0.67,
+      "sample_step_vs_p99_step": 1.325,
       "before_after_minute_rms_db": [
-       -24.14,
-       -23.88
+       -23.91,
+       -24.07
       ]
      }
     ],
     "typical_2s_window_dev_db": 0.41,
     "loudness": {
      "2s_rms_min_max_db": [
-      -24.54,
-      -23.47
+      -24.67,
+      -23.44
      ],
-     "2s_rms_p5_p95_spread_db": 0.76,
+     "2s_rms_p5_p95_spread_db": 0.67,
      "10s_rms_min_max_db": [
-      -24.31,
-      -23.66
+      -24.38,
+      -23.75
      ],
-     "10s_rms_p5_p95_spread_db": 0.59,
+     "10s_rms_p5_p95_spread_db": 0.31,
      "30s_rms_min_max_db": [
-      -24.28,
-      -23.82
+      -24.11,
+      -23.91
      ],
-     "30s_rms_p5_p95_spread_db": 0.4,
+     "30s_rms_p5_p95_spread_db": 0.18,
      "rms_dbfs": -24.0,
-     "peak_dbfs": -7.54
+     "peak_dbfs": -2.9
     }
    },
    "before_v2": {
@@ -192,6 +193,329 @@
      "peak_dbfs": 0.16
     }
    }
+  },
+  "rain": {
+   "name": "Summer Rain",
+   "source": "https://archive.org/details/aporee_50040_57088",
+   "source_file": "sateenropina.mp3",
+   "source_md5": "2434b6efa85bcce192d1f5005bd302ab",
+   "source_seconds": 1523.37,
+   "excluded": [
+    [
+     0.0,
+     1002.0,
+     "frequent cars on the wet street (14 passes of +10 to +20 dB, 10-27 s each)"
+    ],
+    [
+     1472.0,
+     1523.4,
+     "car passes from 1475 s and the recording end"
+    ]
+   ],
+   "dethump": {
+    "frames_reduced_pct": 5.22,
+    "max_reduction_db": 9.8
+   },
+   "seam_search_cost_db": 0.29,
+   "source_ranges_used_seconds": [
+    [
+     1049.0,
+     1459.0
+    ]
+   ],
+   "target_band_levels_db": [
+    -45.21,
+    -47.97,
+    -48.34,
+    -46.3,
+    -45.52,
+    -46.88,
+    -51.47,
+    -52.44,
+    -54.18,
+    -56.9
+   ],
+   "segment_levelling": [
+    {
+     "broadband_gain_db": [
+      -1.65,
+      2.86
+     ],
+     "balance_correction_db": [
+      0.66,
+      1.69
+     ],
+     "max_tilt_correction_db": 1.59
+    }
+   ],
+   "joins_seconds_in_loop": [
+    10.0
+   ],
+   "join_correlations": [
+    0.0031
+   ],
+   "crossfades_seconds": {
+    "seam": 20.0,
+    "internal": 0
+   },
+   "loop_levelling": {
+    "broadband_gain_db": [
+     -0.65,
+     0.3
+    ],
+    "balance_correction_db": [
+     -0.06,
+     0.18
+    ],
+    "max_tilt_correction_db": 0.7
+   },
+   "peak_softening": {
+    "samples_reduced_1db_pct": 1.116,
+    "samples_reduced_pct": 2.068,
+    "max_reduction_db": 10.84
+   },
+   "master": {
+    "loop_seconds": 390,
+    "wrap_point": {
+     "rms_dev_db": 3.49,
+     "band_dev_db": 6.86,
+     "centroid_dev_pct": 21.2,
+     "surrounding_2s_rms_spread_db": 6.92,
+     "sample_step_vs_p99_step": 0.466,
+     "before_after_minute_rms_db": [
+      -23.66,
+      -23.65
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 3.02,
+     "band_dev_db": 5.27,
+     "centroid_dev_pct": 23.0,
+     "surrounding_2s_rms_spread_db": 7.08,
+     "sample_step_vs_p99_step": 0.18,
+     "before_after_minute_rms_db": [
+      -23.44,
+      -24.11
+     ]
+    },
+    "joins": [],
+    "typical_2s_window_dev_db": 4.22,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -28.73,
+      -18.14
+     ],
+     "2s_rms_p5_p95_spread_db": 6.72,
+     "10s_rms_min_max_db": [
+      -26.11,
+      -21.66
+     ],
+     "10s_rms_p5_p95_spread_db": 3.43,
+     "30s_rms_min_max_db": [
+      -25.47,
+      -23.06
+     ],
+     "30s_rms_p5_p95_spread_db": 2.06,
+     "rms_dbfs": -24.0,
+     "peak_dbfs": -2.35
+    }
+   },
+   "before_v2": {
+    "loop_seconds": 180.0,
+    "seam": {
+     "rms_dev_db": 4.03,
+     "band_dev_db": 6.82,
+     "centroid_dev_pct": 19.1,
+     "surrounding_2s_rms_spread_db": 11.84,
+     "sample_step_vs_p99_step": 0.056,
+     "before_after_minute_rms_db": [
+      -23.32,
+      -23.57
+     ]
+    },
+    "typical_2s_window_dev_db": 7.34,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -32.01,
+      -17.64
+     ],
+     "2s_rms_p5_p95_spread_db": 11.7,
+     "10s_rms_min_max_db": [
+      -29.02,
+      -18.84
+     ],
+     "10s_rms_p5_p95_spread_db": 8.76,
+     "30s_rms_min_max_db": [
+      -27.78,
+      -21.17
+     ],
+     "30s_rms_p5_p95_spread_db": 6.42,
+     "rms_dbfs": -24.04,
+     "peak_dbfs": -6.14
+    }
+   }
+  },
+  "thunder": {
+   "name": "Distant Thunder",
+   "source": "https://archive.org/details/aporee_41798_47650",
+   "source_file": "RainandthunderinThailandTH181001T01.mp3",
+   "source_md5": "b635db599df8ad3f6473ae92b3285b56",
+   "source_seconds": 2100.62,
+   "excluded": [
+    [
+     0.0,
+     735.0,
+     "thunder every 20-40 s, peaks to -0.9 dBFS; engine hum lines at 640-740 s"
+    ],
+    [
+     1160.0,
+     2100.6,
+     "louder close strikes (1215-1314 s), frogs and insects from about 1700 s"
+    ]
+   ],
+   "thunder_taming": {
+    "low_band_max_reduction_db": 26.0,
+    "high_band_max_reduction_db": 5.9,
+    "low_band_frames_reduced_pct": 22.1
+   },
+   "seam_search_cost_db": 3.288,
+   "source_ranges_used_seconds": [
+    [
+     735.0,
+     1145.0
+    ]
+   ],
+   "target_band_levels_db": [
+    -71.17,
+    -57.49,
+    -44.85,
+    -36.02,
+    -31.67,
+    -30.52,
+    -33.82,
+    -36.3,
+    -39.46,
+    -42.47
+   ],
+   "segment_levelling": [
+    {
+     "broadband_gain_db": [
+      -1.32,
+      4.25
+     ],
+     "balance_correction_db": [
+      -2.09,
+      -1.53
+     ],
+     "max_tilt_correction_db": 8.0
+    }
+   ],
+   "joins_seconds_in_loop": [
+    10.0
+   ],
+   "join_correlations": [
+    0.0005
+   ],
+   "crossfades_seconds": {
+    "seam": 20.0,
+    "internal": 0
+   },
+   "loop_levelling": {
+    "broadband_gain_db": [
+     -0.19,
+     0.18
+    ],
+    "balance_correction_db": [
+     -0.07,
+     0.06
+    ],
+    "max_tilt_correction_db": 4.0
+   },
+   "peak_softening": {
+    "samples_reduced_1db_pct": 0.008,
+    "samples_reduced_pct": 0.04,
+    "max_reduction_db": 4.84
+   },
+   "master": {
+    "loop_seconds": 390,
+    "wrap_point": {
+     "rms_dev_db": 0.53,
+     "band_dev_db": 11.93,
+     "centroid_dev_pct": 3.9,
+     "surrounding_2s_rms_spread_db": 0.98,
+     "sample_step_vs_p99_step": 0.508,
+     "before_after_minute_rms_db": [
+      -24.14,
+      -23.74
+     ]
+    },
+    "seam": {
+     "rms_dev_db": 0.5,
+     "band_dev_db": 11.59,
+     "centroid_dev_pct": 4.8,
+     "surrounding_2s_rms_spread_db": 0.99,
+     "sample_step_vs_p99_step": 0.75,
+     "before_after_minute_rms_db": [
+      -24.11,
+      -23.81
+     ]
+    },
+    "joins": [],
+    "typical_2s_window_dev_db": 0.96,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -24.76,
+      -19.35
+     ],
+     "2s_rms_p5_p95_spread_db": 1.39,
+     "10s_rms_min_max_db": [
+      -24.44,
+      -22.33
+     ],
+     "10s_rms_p5_p95_spread_db": 1.29,
+     "30s_rms_min_max_db": [
+      -24.35,
+      -23.47
+     ],
+     "30s_rms_p5_p95_spread_db": 0.77,
+     "rms_dbfs": -24.0,
+     "peak_dbfs": -3.0
+    }
+   },
+   "before_v2": {
+    "loop_seconds": 180.0,
+    "seam": {
+     "rms_dev_db": 6.91,
+     "band_dev_db": 9.77,
+     "centroid_dev_pct": 67.1,
+     "surrounding_2s_rms_spread_db": 17.8,
+     "sample_step_vs_p99_step": 0.494,
+     "before_after_minute_rms_db": [
+      -22.12,
+      -23.37
+     ]
+    },
+    "typical_2s_window_dev_db": 9.41,
+    "loudness": {
+     "2s_rms_min_max_db": [
+      -33.64,
+      -14.34
+     ],
+     "2s_rms_p5_p95_spread_db": 17.25,
+     "10s_rms_min_max_db": [
+      -33.49,
+      -16.83
+     ],
+     "10s_rms_p5_p95_spread_db": 15.22,
+     "30s_rms_min_max_db": [
+      -32.47,
+      -19.32
+     ],
+     "30s_rms_p5_p95_spread_db": 12.31,
+     "rms_dbfs": -23.9,
+     "peak_dbfs": -8.73
+    }
+   }
   }
  },
  "version": "v3",
@@ -200,6 +524,6 @@
  "chunks": 10,
  "pad_seconds": 0.25,
  "target_rms_dbfs": -24.0,
- "peak_ceiling_dbfs": -8.0,
+ "peak_ceiling_dbfs": -3.0,
  "pipeline": "tools/master_audio.py"
 }

@@ -839,7 +839,7 @@
   }
 
   /* ---------- "Take a breath" practice ---------- */
-  const practice = {dlg: null, els: {}, runner: null, raf: 0, opener: null, shown: ''};
+  const practice = {dlg: null, els: {}, runner: null, raf: 0, opener: null};
 
   function buildPractice() {
     const chip = id => {
